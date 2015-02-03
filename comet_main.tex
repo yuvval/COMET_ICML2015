@@ -9,6 +9,7 @@
 
 %% COMET packages
 \usepackage{amssymb}
+\usepackage{amsmath}
 \usepackage{mathtools}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,6 +89,7 @@
 \renewcommand\vec[1]{\mathbf{#1}}
 \newcommand{\T}{{}^\mathsf{T}}
 \newcommand{\W}{\mat{W}}
+\newcommand{\Z}{\mat{Z}}
 \newcommand{\newW}{{\mat{W^*}}}
 \newcommand{\eqdef}{\doteq}
 \newcommand{\Rd}{\mathbb{R}^d}
@@ -161,12 +163,11 @@ where $\textbf{1}(x)$ is an indicator for $x>0$. Hence it is non-zero when \eqre
 $\frac{\partial {l_t (\W)}}{\partial \W}$ is a matrix, which represents the gradient of $l_{\W}^{t}$ with respect to each the elements of $W$.
 
 The matrix gradient of $\tfrac{1}{2} \| \W \|_{F}^{2}$ equals $\W$ and the matrix gradient of  $\log \det(\W)$ equals $\W^{-1}$. Therefore, the matrix gradient of the objective function $L(\W)$ can be easily determined: 
-\begin{equation}
-\begin{array}{l}
+\begin{multline}
 \frac{\partial {L (\W)}}{\partial \W} = 
-\sum\limits_{t\in T}{\{ [\tfrac{1}{2}[\vec{q}_{t}\Delta\vec{p}_{t}\T + \Delta\vec{p}_{t}\vec{q}_{t}\T \} } \cdot \textbf{1}(\lambda_t)] \\ - \alpha \cdot \W^{-1} + \beta \cdot \W
-\end{array}
-\end{equation}
+\sum\limits_{t\in T}{\{ [\tfrac{1}{2}[\vec{q}_{t}\Delta\vec{p}_{t}\T + \Delta\vec{p}_{t}\vec{q}_{t}\T \} } \cdot \textbf{1}(\lambda_t)] \\- \alpha \cdot \W^{-1} + \beta \cdot \W 
+\label{gradMat}
+\end{multline}
 \todo{describe computational complexity}
 Taking the gradient of the objective which is the sum of of hinge losses over all the triplets in a batch is a straight-forward gradient descent approach and has already been utilized by \cite{qian}. Its drawback is that it can't ensure that the update following the gradient step will keep $\W$ as positive definite. On \cite{qian} a projection to the PSD cone is applied following each update. 
 
@@ -216,27 +217,27 @@ We note that $\mat{A}^* = \mat{A}$ because we only update in this step the row-c
 \end{equation}
 Next, we expand \eqref{schurCond} according to \eqref{updateEq} and \eqref{gradMtx} (with $k=1$) yielding a condition for $\newW \succ  0$
 \begin{equation}
-\begin{array}{lcl} 
-(\W_{(1,1)} + 2\eta \vec{u}_{(1)})  - \\
-(\W_{(2:,1)} + \eta \vec{u}_{(2:)})\T \mat{A}^{-1} (\W_{(2:,1)} + \eta \vec{u}_{(2:)})  & > 0
+\begin{array}{ll} 
+(\W_{(1,1)} + 2\eta \vec{u}_{(1)})  \\
+-(\W_{(2:,1)} + \eta \vec{u}_{(2:)})\T \mat{A}^{-1} (\W_{(2:,1)} + \eta \vec{u}_{(2:)})  & > 0
 \end{array}
 \label{PDUpdateCondNonSimpl}
 \end{equation}
 Grouping \eqref{PDUpdateCondNonSimpl} as a quadratic inequality, we get:
 \begin{equation}
-\begin{array}{lcl} 
--(\vec{u}_{(2:)}\T \mat{A}^{-1} \vec{u}_{(2:)})\eta^2  + \\
-2(\vec{u}_{(1)} - \vec{u}_{(2:)}\T \mat{A}^{-1}\W_{(2:,1)})\eta + \\
-(\W_{(1,1)} - \W_{(2:,1)}\T  \mat{A}^{-1} \W_{(2:,1)}) & > 0
+\begin{array}{ll} 
+-(\vec{u}_{(2:)}\T \mat{A}^{-1} \vec{u}_{(2:)})\eta^2 \\
++2(\vec{u}_{(1)} - \vec{u}_{(2:)}\T \mat{A}^{-1}\W_{(2:,1)})\eta\\
++(\W_{(1,1)} - \W_{(2:,1)}\T  \mat{A}^{-1} \W_{(2:,1)}) & > 0
 \end{array}
 \label{PDUpdateCondQuadFormWithW}
 \end{equation}
 or according to \eqref{schurNotationPreUpdate}:
 \begin{equation}
-\begin{array}{lcl} 
-(\vec{u}_{(2:)}\T \mat{A}^{-1} \vec{u}_{(2:)}) \eta^2 - \\
-2(\vec{u}_{(1)} - \vec{u}_{(2:)}\T \mat{A}^{-1}\vec{B})\eta - \\
-(C - \vec{B}\T  \mat{A}^{-1} \vec{B}) & < 0
+\begin{array}{ll} 
+(\vec{u}_{(2:)}\T \mat{A}^{-1} \vec{u}_{(2:)}) \eta^2 \\
+-2(\vec{u}_{(1)} - \vec{u}_{(2:)}\T \mat{A}^{-1}\vec{B})\eta \\
+-(C - \vec{B}\T  \mat{A}^{-1} \vec{B}) & < 0
 \end{array}
 \label{PDUpdateCondQuadForm}
 \end{equation}
@@ -327,22 +328,51 @@ All of the above is summarized in Algoirthm \ref{alg:comet}
 \end{algorithmic}
 \end{algorithm}
 
-\section{Computational complexity}
-Our algorithm is fast. Each step takes a fixed amount of operations. It keeps $\W$ within the PD cone and therefore avoid a costly projection to the PD cone following each step. 
+\subsection{Computational complexity}
+Our algorithm is competitively fast. Each step takes a fixed amount of operations. It keeps $\W$ within the PD cone and therefore avoid a costly projection to the PD cone following each step. Here, we evaluate the computational complexity for a single coordinate step. The complexity is comprised of an evaluation of the gradient elements and updating $\W$, $\W^{1}$ and $\mat{A}^-1$.
 
-% number of steps < 10*d
+We evaluate the computational complexity of a single coordinate step \eqref{gradMat}. Each element $\delta_{(i,j)}$ of the gradient matrix \eqref{gradMat} equals
+\begin{multline}
+\delta_{(i,j)} = \sum\limits_{t\in T}{ [\tfrac{1}{2}[(\vec{q}_{t})_i(\Delta\vec{p}_{t}\T)_j + (\Delta\vec{p}_{t}\T)_i(\vec{q}_{t})_j\T] } \cdot \textbf{1}(\lambda_t)  \\ 
+ - \alpha \cdot \W^{-1}_{(i,j)} + \beta \cdot \W_{(i,j)}
+\label{gradMatElem}
+\end{multline}
 
+If the training data is dense, evaluating the sum in \eqref{gradMatElem} costs maximal $o(|T|)$ operations, where $|T|$ is the number of triplets. Nonetheless, if the training data is sparse, with a sparsity coefficient $\gamma$,  $ 0< \gamma <1 $, then evaluating the sum in \eqref{gradMatElem} will cost an average of $o(\gamma^2 |T|)$ operations, because we can accumulate only the elements that are both non-zeros in $(\vec{q}_{t})_i$ and in $(\Delta\vec{p}_{t}\T)_j  $ (same goes to $(\vec{q}_{t})_j$ and $(\Delta\vec{p}_{t}\T)_i$). Evaluating $\W^{-1}_{(i,j)}$ and $\W_{(i,j)}$ costs $o(1)$ since we always keep the updated versions of $\W$ and $\W^{-1}$. Evaluating all the gradient elements $\delta_{(k,:)}$ in a single row $k$ then costs $o(d\cdot \gamma^2 |T|)$. Accounting for $o(d^2)$ which is the cost of evaluating each of \eqref{InvA}, \eqref{PDUpdateCondQuadForm} and \eqref{InvWwdb}, sums up for a computational complexity cost of $o(\gamma^2 d |T| + d^2)$ per coordinate step.
 
+Finally, the total computational complexity cost of our approach is $o(N \cdot (\gamma d)^2 |T| + N \cdot d^3)$ while taking $N \dot d$ coordinate steps, where N is the number of iterations over all the coordinates. Our empirical experimental results showed that our approach converges for choosing $N$ between 5 to 10. 
+
+With regard to memory usage, holding the triplets costs $o(\gamma d |T|)$ elements, holding $\W$ and $\W^{-1}$ costs $o(d^2)$. The total memory usage is $o(\gamma d |T| + d^2)$
 \section{Convergence}
-Our method is based on minimizing a strongly convex function using block-coordinate descent. There is a well established body of work showing that when using non-overlapping blocks, block-coordinate descent iterates converge w.h.p. in a linear rate to the optimum value \cite{nesterov2012efficiency,richtarik2014iteration}. However, the blocks we use in our method are overlapping - for example the $(1,2)$ coordinate of the matrix is a part of both the 1\textsuperscript{st} and the 2\textsuperscript{nd} column-row. We thus make use of a more general convergence result applicable to overlapping blocks, given by \citet{richtarik2013optimal}. In their paper, \citet{richtarik2013optimal} give sufficient conditions for linear convergence of overlapping block-coordinate descent for a strongly convex smooth objective. In order for these conditions to hold, we must slightly modify the objective function $L({\W})$. The objective $L(\W)$ is strongly convex but not smooth, since the gradient of the log-det term is unbounded near the envelope of the positive definite cone. Let $\tilde{L}({\W}) = L({\W + \alpha I_d})$, where $I_d$ is the $d \times d$ identity matrix, and $\alpha$ is a fixed parameter. Note that our algorithm can easily minimize $\tilde{L}$, the only difference being that we now need to maintain both $\W^{-1}$ and $(\W+\alpha I_d)^{-1}$, which does not change the asymptotic computational complexity. The additional $\alpha I_d$ term acts as a prior, where we add a Euclidean distance term to the distance we learn. 
-We will now show that the modified objective $\tilde{L}$ obeys Assumption $4$ and Assumption $5$ of \citet{richtarik2013optimal}, thus enjoying a linear convergence rate to the global optimum.
+Our method is based on minimizing a strongly convex function using block-coordinate descent. There is a well established body of work showing that when using non-overlapping blocks, block-coordinate descent iterates converge w.h.p. in a linear rate to the optimum value \cite{nesterov2012efficiency,richtarik2014iteration}.
+However, the blocks we use in our method are overlapping - for example the $(1,2)$ coordinate of the matrix is a part of both the 1\textsuperscript{st} and the 2\textsuperscript{nd} column-row. We thus make use of a more general convergence result applicable to overlapping blocks, given by \citet{richtarik2013optimal}. 
+In their paper, \citet{richtarik2013optimal} give sufficient conditions for linear convergence of overlapping block-coordinate descent for a strongly convex smooth objective.
+In order for these conditions to hold, we must slightly modify the objective function $L({\W})$. The objective $L(\W)$ is strongly convex but not smooth, since the gradient of the log-det term is unbounded near the envelope of the positive definite cone. Let $\tilde{L}({\W}) = L({\W + \eta I_d})$, where $I_d$ is the $d \times d$ identity matrix, and $\eta$ is a fixed parameter.
+Note that our algorithm can easily minimize $\tilde{L}$, the only difference being that we now need to maintain both $\W^{-1}$ and $(\W+\eta I_d)^{-1}$, which does not change the asymptotic computational complexity. The additional $\eta I_d$ term acts as a prior, where we add a Euclidean distance term to the distance we learn. 
+We now show that the modified objective $\tilde{L}$ obeys Assumption $4$ and Assumption $5$ of \citet{richtarik2013optimal}.Thereby, according to \citet[Theorems 3 and 7]{richtarik2013optimal}, Algorithm \ref{alg:comet} converges to the optimum value in a linear rate.
 
 \begin{theorem}
-Let ...
+Let $\tilde{L}(\W)=\sum\limits_{t\in T}{l_{\W + \eta I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \eta I) + \tfrac{1}{2} \beta \cdot \| \W + \eta I \|_{F}^{2}$, where $l_{\W + \eta I}$ is either the squared hinge loss or the log-loss, and $\tilde{L}$ is defined over the positive semidefininte cone.
+Then the following two conditions hold:
+\begin{enumerate}
+%\item[Assumption 4, \cite{richtarik2013optimal}] the first
+%\item[Assumption 5, \cite{richtarik2013optimal}] the second
+\item Assumption 4, \citet{richtarik2013optimal}: $\tilde{L}$ has Lipschitz gradient with positive constant $L$, such that $\| \nabla \tilde{L}(\W) - \nabla \tilde{L}(\W + t\Z) \|_F \leq L |t|$ for all symmetric matrices $\Z \in \mathbb{R}^{d \times d}$ and $t \in \mathbb{R}$ such that $\W + t\Z$ is positive semidefinite.
+\item Assumption 5, \citet{richtarik2013optimal}: 
+$\tilde{L}(\W) = \sum_{S \in \mathbb{S}} \ell_S (\W)$, where $\mathbb{S}$ is a finite collection of subsets of the set of matrix index pairs $[d] \times [d]$, and $\ell_S$ are differentiable convex functions such that $\ell_S$ depends only on coordinates $(i,j) \in S$.
+\end{enumerate}
 \end{theorem}
 
 \begin{proof}
-proo
+proof here
+\end{proof}
+
+\begin{corollary}
+Let $\W^k$ be the $k$ iterate of Algorithm \ref{alg:comet} with objective function $\tilde{L}$, and let $\tilde{L}^*$ be the optimal value of $\tilde{L}$ on the PSD cone.
+If $t >$ \todo{compute what should be here}, then $Prob(\tilde{L}(\W^k) - \tilde{L}^* \leq \epsilon) \geq 1-\rho$.
+\end{corollary}
+\begin{proof}
+proof here
 \end{proof}
 \section{Experiments}
 %  Note that we've also tested our approach with Frobenius norm regularization, but haven't seen a significant improvement for utilizing it.
