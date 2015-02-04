@@ -356,7 +356,7 @@ We now show that the modified objective $\tilde{L}$ obeys Assumption $4$ and Ass
 Let $\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \kappa I) + \tfrac{1}{2} \beta \cdot \| \W + \kappa I \|_{F}^{2}$, where $l_{\W + \kappa I}$ is either the squared hinge loss or the log-loss, and $\tilde{L}$ is defined over the positive semidefininte cone.
 Then $\tL$ is strongly convex, and the following two conditions hold:
 \begin{enumerate}
-\item Assumption 4, \citet{richtarik2013optimal}: $\tilde{L}$ has Lipschitz gradient with respect to the matrix coordinates: There exist positive constants $L_{ij}$ $1 \leq i \leq d, 1 \leq j \leq d$, such that $\| \frac{\partial \tL}{W_{ij}} - \frac{\partial \tilde{L}(\W + t \E_{ij})}{W_{ij}} \|_F \leq L_{ij} |t|$ for all $t \in \mathbb{R}$ such that $\W + t\E_{ij}$ is positive semidefinite, where $\E_{ij}$ is a symmetric matrix with all zeros except the $(i,j)$ and $(j,i)$ coordinates.
+\item Assumption 4, \citet{richtarik2013optimal}: $\tilde{L}$ has Lipschitz gradient with respect to the matrix coordinates: There exist positive constants $L_{ij}$ $1 \leq i \leq d, 1 \leq j \leq d$, such that $| \frac{\partial \tL}{W_{ij}} - \frac{\partial \tilde{L}(\W + t \E_{ij})}{W_{ij}} | \leq L_{ij} |t|$ for all $t \in \mathbb{R}$ such that $\W + t\E_{ij}$ is positive semidefinite, where $\E_{ij}$ is a symmetric matrix with all zeros except ones at the $(i,j)$ and $(j,i)$ coordinates.
 
 \item Assumption 5, \citet{richtarik2013optimal}: 
 $\tL = \sum_{S \in \mathcal{S}} f_S (\W)$, where $\mathcal{S}$ is a finite collection of subsets of matrix index pairs (for example a row-column), and $f_S$ are differentiable convex functions such that $f_S$ depends only on coordinates $(i,j) \in S$.
@@ -367,12 +367,13 @@ $\tL = \sum_{S \in \mathcal{S}} f_S (\W)$, where $\mathcal{S}$ is a finite colle
 
 \begin{enumerate}
 The objective $\tL$ is comprised of three terms - (1) the sum of loss terms, (2) the $\log \det$ term, and (3) the Frobenius regularization term. The Frobenius norm term ensures that $\tL$ is at least $\beta$ strongly-convex.
-\item Assumption 4, \citet{richtarik2013optimal}: Straightforward computation shows that the terms (1) and (3) have Lipschitz gradients: The Lipschitz constant $L_{ij}$ for the gradient of the sum of loss terms is bounded by $\sum_{t \in T} (\vec{{q_t}_i} {\Delta \vec{p_t}}_j)^2 + (\vec{{q_t}_j} {\Delta \vec{p_t}}_i)^2$. The Lipschitz constant for the Frobenius regularization is $\beta$.
-We now show the the $\log \det$ term also has Lipschitz directional derivatives, given that $\kappa >0$:
+\item Assumption 4, \citet{richtarik2013optimal}: Straightforward computation shows that the terms (1) and (3) have Lipschitz gradients, denoted $L^1_{ij}$ and $L^3_{ij}$ respectively: The Lipschitz constant $L^1_{ij}$ for the gradient of the sum of loss terms is bounded by $\sum_{t \in T} (\vec{{q_t}_i} {\Delta \vec{p_t}}_j)^2 + (\vec{{q_t}_j} {\Delta \vec{p_t}}_i)^2$. The Lipschitz constant for the Frobenius regularization is $\beta$.
+In order to show that the $\log \det$ function has Lipschitz derivatives in our domain, we bound the diagonal entries of its Hessian matrix. The Hessian diagonal elements serve as Lipschitz bounds, which can be seen using standard Taylor expansion on the difference $\frac{\partial \tL}{W_{ij}} - \frac{\partial \tilde{L}(\W + t \E_{ij})}{W_{ij}}$.
+
+The Hessian matrix $\mathcal{H}$ of the $- \log \det$ function is a $d^2 \times d^2$ matrix, whose entries are indexed by pairs $((i,j),(k,l))$, such that the diagonal entries are indexed by $(i,j),(i,j)$. The Hessian itself is cumbersome to compute, however computing its diagonal terms can be done relatively easily using the following identity for the Hessian of the $-\log \det$ function evaluated at a point $X$ :  $$\mathcal{H}_{(i,j),(i,j)} = tr\left(X^{-1}E_{ij} X^{-1}E_{ij}\right) $$ \citep{boyd2004convex}.
 \begin{align}
 &| \frac{\partial \log \det (\W + \kappa I)}{\W_{ij}}  - \frac{\partial \log \det (\W + \kappa I + t \E_{ij})}{\W_{ij}}|  = \\
-&| (\W + \kappa I)^{-1} - (\W + \kappa I + t\E_{ij})^{-1} | = \\
-
+&| (\W + \kappa I)^{-1} - (\W + \kappa I + t\E_{ij})^{-1} | = 
 \end{align}
 \item Assumption 5, \citet{richtarik2013optimal}: 
 $\tL = \sum_{S \in \mathcal{S}} f_S (\W)$, where $\mathcal{S}$ is a finite collection of subsets of matrix index pairs (for example a row-column), and $f_S$ are differentiable convex functions such that $f_S$ depends only on coordinates $(i,j) \in S$.
@@ -386,13 +387,46 @@ If $t >$ \todo{compute what should be here}, then $Prob(\tilde{L}(\W^k) - \tilde
 proof here
 \end{proof}
 \section{Experiments}
+We evaluate COMET on real world several datasets and compare its performance with several other approaches. All the approaches we compare with learn a Mahalanobis metric matrix and use coordinate descent method that ensures that each update of the metric matrix results inside the PD cone. 
+\subsection{Experimental setup}
+\subsection{Datasets}
+We evaluate COMET on several datasets real world datasets of different sizes and dimensionality. In all the datasets we examine, two samples are considered similar if they share the same class label. Each data set is tested on a two layer 5 fold cross validation experiment with 80\%/20\% random splits. We use the same random splits across all approaches.
+
+\textbf{Reuters CV1} is a text classification dataset, with \textit{bag-of-words} representation. We take a 4 classes subset of Reuters CV1 introduced in \cite{CaiRCV14} and was tested for metric learning in \cite{hdsl}. We selected a subset of 5000 features that conveyed high information about the identity of the class using the \textit{infogain} criterion \cite{infogain}. This is a discriminative criterion, which measures the number of bits gained for category prediction by knowing the presence or absence of a term in a document. The selected features with normalized using \textit{tf-idf} and then represented each document as a bag of words.  
+
+\textbf{Caltech256} is an image classification dataset.   We take a 50 classes subset of Caltech256 introduced and tested for metric learning in \cite{oasis}. It contains 65 images per class (total of 3250 images), represented with 975 \textit{bag-of-local-descriptors} features.
+
+%\textbf{Semeion} is handwritten digits image dataset with binary sparse representation. That was downloaded from the UCI repository \cite{UCI, semeion} and was tested for metric learning in \cite{qian}. It contains 1593 images, each image is represented sparsely by 256 binary pixels features.
+
+\textbf{Protein} is a bioinformatics dataset that was downloaded from the LIBSVM repository \cite{libsvm} and was tested for metric learning  in \cite{qian}. It cons 24387 samples, each sample is represented by 357 features. 
+
 %  Note that we've also tested our approach with Frobenius norm regularization, but haven't seen a significant improvement for utilizing it.
 % number of steps < 10*d
 
-\subsection{Experimental setup}
-\subsection{Competing methods}
-\subsection{Retrieval of similar images}
-\subsection{Document retrieval}
+\subsection{Competing approaches}
+\textbf{COMET} - The algorithm described above.
+
+\textbf{Euclidean} - The standard Euclidean distance in the feature space. The initialization of COMET using the identity matrix is equivalent to this distance measure.
+
+\textbf{HDSL} - is an approach that deals with high-dimensional sparse data \cite{hdsl}. It is comprised on rank-1 sparse update matrices that are all zeros except for $2\times2$ pair of features elements. It greedily incorporates one pair of features at a time to control the number of active features.
+
+\textbf{LEGO} - learns a Mahalanobis distance in an online fashion using a regularized per instance loss yielding a positive semidefinite matrix \cite{lego}. The main variant of LEGO aims to fit a given set of pairwise distances. We used another variant of LEGO that, like COMET, learns from relative distances. In our experimental setting, the loss is incurred for same-class samples being more than a certain distance away, and different class samples being less than a certain distance away.
+
+\textbf{BoostMetric} - is based on the observation that any positive semidefinite matrix can be decomposed into linear positive combination of trace-1 rank-1 matrices  \cite{boost}. It uses rank-1 positive semidefinite matrices as weak learners within a boosting based learning process.
+
+%OASIS??
+
+\subsection{Evaluation Measures}
+We evaluated the performance of all algorithms using standard ranking precision measures
+based on nearest neighbors. For each query image in the test set, all other test images were
+ranked according to their similarity to the query image. The number of same-class images
+among the top k images (the k nearest neighbors) was computed. When averaged across test
+images (either within or across classes), this yields a measure known as \textit{precision-at-top-k},
+providing a precision curve as a function of the rank k.
+
+
+
+\subsection{Results}
 
 
 \section{Summary}
