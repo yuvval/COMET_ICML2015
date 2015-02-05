@@ -95,6 +95,12 @@
 \newcommand{\Rd}{\mathbb{R}^d}
 \newcommand{\tL}{\tilde{L}(\W)}
 
+\newcommand{\frob}[1]{{\cdot \|#1\|_F^2}} 
+
+\newcommand{\ignore}[1]{}
+
+\newcommand{\q}{{\vec{q}}}
+\newcommand{\p}{{\vec{p}}}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
@@ -103,8 +109,8 @@
 
 
 %\DeclareMathOperator*{\argmin}{arg\,min}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract} 
 TBD
 \end{abstract} 
@@ -190,8 +196,8 @@ solving an eigen-decomposition problem and is therefore costly in
 run-time. To avoid this costly projection, we add a log-barrier term,
 as in \cite{itml}
 \begin{equation}
-  \min_{\W}& \sum_{t=1}^T  l_{\W}(\q_t, \p_t^{+}, \p_t^{-})+  \alpha  \log \det(\W) +  \beta \frob{\W}
-  \label{eq-logdet-loss}
+\min_{\W}& \sum_{t=1}^T  l_{\W}(\q_t, \p_t^{+}, \p_t^{-})+  \alpha  \log \det(\W) +  \beta \frob{\W}
+\label{eq-logdet-loss}
 \end{equation}
 where $\alpha$ is a hyper-parameter that determines the weight of the
 logdet regularizer, and the $\log \det$ term ensures that only
@@ -246,7 +252,7 @@ w.r.t. $\W$ is
   \textbf{1}(l_t(\W))] \\- \alpha \cdot \W^{-1} + \beta \cdot \W
   \label{gradMat}
 \end{multline}
-where $\Delta\p_t = \p_t^+ - \p_t^-$, and ${\textbf{1}(l_t(\W))$ is an
+where $\Delta\p_t = \p_t^+ - \p_t^-$, and $\textbf{1}(l_t(\W))$ is an
 indicator function which obtains a value of one if the loss is
 positive, and zero otherwise (see appendix for derivation details).
 
@@ -285,9 +291,9 @@ where $\vec{u}$ is a column vector that equals the column $k$ of the
 $\vec{e_k}$ equals an elementary vector for selecting a column $k$ of
 a matrix.
 
-[XXX YUVAL, WHy IS THIS NECESSARY? FOr NUMERICAL STABILITY? XXX}
-
-}} 
+[XXX YUVAL, WHy IS THIS NECESSARY? FOr NUMERICAL STABILITY? XXX
+}}
+}
 
 \subsubsection{choosing the step size $\eta$}
 We now show how the step size can be bounded to guarantee tat $\newW$ is PD.
