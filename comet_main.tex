@@ -199,11 +199,9 @@ The loss in \eqref{eq-logdet-loss} can be minimized using gradient descent (GD),
 \end{multline}
 %{l'}(\lambda_{t}^{\W})
 %where $l'(x) \eqdef \frac{\partial {l(x)}}{\partial x}$, $\Delta\vec{p}_{t} \eqdef (\vec{p}_{t}^{-} - \vec{p}_{t}^{+})$
-where $\Delta\p_t = \p_t^- - \p_t^+$, and $l'(x) \eqdef \frac{d{l(x)}}{dx}$ is the outer derivative of the loss function (see Appendix A for derivation details). For example, for the hinge-loss, 
+where $\Delta\p_t = \p_t^- - \p_t^+$, and $l'(x) \eqdef \frac{d{l(x)}}{dx}$ is the outer derivative of the loss function (see Appendix A for derivation of the triplet loss). For example, for the hinge-loss, 
 $l'\triplet$ 
-%${l'}(\lambda_{t}^{\W})$ 
 is an indicator function which obtains a value of $1$ if the loss is positive, and zero otherwise.
-
 
 
 % ============================================================
@@ -239,7 +237,7 @@ Since PD matrices are symmetric, we require the update $\mat{G}$ of \eqref{updat
   \label{gradMtx}
 \end{equation}
 where $\vec{u}$ is a column vector that equals the column $k$ of the
-(symmetric) gradient matrix of the objective \eqref{gradMat},
+(symmetric) gradient matrix of the objective \eqref{gradMtx},
 $\vec{e_k}$ equals an elementary vector for selecting a column $k$ of
 a matrix.
 }
@@ -349,14 +347,16 @@ Our approach is summarized in Algorithm \ref{alg:comet}. We've chosen $\W^0$ to 
 \end{algorithm}
 
 \subsection{Analysis of computational complexity}
-We evaluate the computational complexity of a single coordinate step \eqref{gradMat}, including the computation of the gradient and updating of $\W$, $\W^{-1}$ and $\invA$
+We evaluate the computational complexity of a single coordinate step \eqref{gradMtx}, including the computation of the gradient and updating of $\W$, $\W^{-1}$ and $\invA$
 
-Consider first the computation of the gradient. For the hinge-loss case $l^{h}_W$, each element $\delta_{i,j}$ of the gradient matrix \eqref{gradMat} equals
+Consider first the computation of the gradient. For the hinge-loss case $l^{h}_W$, each element $\delta_{i,j}$ of the gradient matrix \eqref{gradMtx} equals
 \begin{multline}
     \delta_{(i,j)} = \sum\limits_{t\in T}{ [\tfrac{1}{2}[(\vec{q}_{t})_i(\Delta\vec{p}_{t}\T)_j + (\Delta\vec{p}_{t}\T)_i(\vec{q}_{t})_j\T] } \cdot \textbf{1}(\lambda_{W}^t)  \\ 
  - \alpha \cdot \W^{-1}_{i,j} + \beta \cdot \W_{i,j}
 \label{gradMatElem}
 \end{multline}
+where $\lambda_{W}^$ is the linear part of the  loss of a triplet  
+$1-\qt\T \W \pt^{+} + \qt\T\W\pt^{-}.$
 
 For dense data, evaluating the sum over triplets costs $O(|T|)$ operations, where $|T|$ is the number of triplets. However, when the  data is sparse with a sparsity coefficient $\gamma$,  $ 0< \gamma <1 $, then evaluating the sum in \eqref{gradMatElem} costs an average of $O(\gamma^2 |T|)$ operations, because we can accumulate only the elements that are both non-zeros in $(\vec{q}_{t})_i$ and in $(\Delta\vec{p}_{t}\T)_j  $ and likewise for $(\vec{q}_{t})_j$ and $(\Delta\vec{p}_{t}\T)_i$. Computing $\W^{-1}_{i,j}$ and $\W_{i,j}$ costs $O(1)$ since we keep updated versions of $\W$ and $\W^{-1}$. Computing all the gradient elements $\delta_{(k,:)}$ in a single row $k$ then costs $O(d\cdot \gamma^2 |T|)$. Maintaining and updating $\W^{-1}$ and $\invA$, and computing the optimal step size follows from Eqs \ref{InvA}, \ref{PDUpdateCondQuadForm} and \ref{InvWwdb}, each with a cost of $O(d^2)$. The total computational complexity per block-coordinate step is therefore $O(\gamma^2 d |T| + d^2)$.
 
@@ -449,7 +449,7 @@ We evaluate COMET on two benchmark datasets.
 
 \textbf{Reuters CV1} is a widely used collection of English text documents. We used the 4-class subset of Reuters CV1 introduced in \cite{CaiRCV14} that was recently tested for metric learning in \cite{hdsl}. We used the \textit{infogain} criterion \cite{infogain} to select a subset of 5000 features that conveyed high information about the identity of the class. This is a discriminative criterion, which measures the number of bits gained for category prediction by knowing the presence or absence of a term in a document. Each document was represented as a bag of words, where the weights of the selected features were normalized using \textit{tf-idf}. The sparsity of this dataset, after selecting the 5000 infogain features, is 1.3\%
 
-We used 100,000 triplets (and 200,000 LEGO constraints) for training on Reuters CV1. This is the same scale that was used in \cite{hdsl}. For training HDSL, we took 8000 iterations as in \cite{hdsl}. Due to the large amount of features, BoostMetric could not converge on this dataset because it was too slow and used a large amount of memory.
+We used 100,000 triplets (and 200,000 LEGO constraints) for training on Reuters CV1. This is the same scale that was used in \cite{hdsl}. For training HDSL, we took 8000 iterations as in \cite{hdsl}. Due to the large number of features, BoostMetric could not converge on this dataset.
 
 \textbf{Caltech256} is a dataset of labeled images used for visual object recognition. We used the subset of 50 classes tested for metric learning in \cite{OASIS}. This set contains 65 images per class (total of 3250 images), represented with ~1000 \textit{bag-of-local-descriptors} features provided by these authors. The sparsity of this dataset is 3.3\%
 
@@ -510,11 +510,10 @@ We presented an approach for learning a distance metric from data samples,  cont
 \label{appendix-grad}
 
 To compute matrix gradient step  $\frac{\partial {l_t (\W)}}{\partial \W}$ of an arbitrary triplet $t$, we denote the linear part of the hinge loss of a triplet $t$ by
-%\begin{equation*}
+
 $\lambda_{W}^t \eqdef 
-%\lambda_t(\W, \qt, \pt^{+}, \pt^{-}) \eqdef 
 1-\qt\T \W \pt^{+} + \qt\T\W\pt^{-}.$
-%\end{equation*}
+
 $\W$ is PD and therefore symmetric. We enforce its gradient to be symmetric by replacing $\W$ with $\tfrac{1}{2}(\W + \W\T)$.
 The derivative of the ranking loss is then given by
 \begin{equation}
@@ -522,11 +521,13 @@ The derivative of the ranking loss is then given by
 \label{dlossranking}
 \end{equation} where $l'(x) \eqdef \frac{\partial {l(x)}}{\partial x}$, $\Delta\vec{p}_{t} \eqdef (\vec{p}_{t}^{-} - \vec{p}_{t}^{+})$.
 
+
+\ignore{
 When using the hinge loss \eqref{hingelt}, the loss in \eqref{dlossranking} is not differentiable at $\lambda_{W}^t = 0$, but it has a sub gradient matrix
 \begin{equation}
 \frac{\partial {l_t (\W)}}{\partial \W} = \tfrac{1}{2}[\vec{q}_{t}\Delta\vec{p}_{t}\T  + \Delta\vec{p}_{t}\vec{q}_{t}\T] \cdot \textbf{1}(\lambda_{W}^t),
 \end{equation}
-where $\textbf{1}(x)$ is an indicator for $x>0$. This gradient is non-zero when the hinge loss \eqref{hingelt} is positive and vanishes otherwise. Replacing the hinge loss by a logarithmic loss yields a continuous $\operatorname{sigmoid}(\lambda_{W}^t)$ instead of $\textbf{1}(\lambda_{W}^t)$.  
+where $\textbf{1}(x)$ is an indicator for $x>0$. This gradient is non-zero when the hinge loss \eqref{hingelt} is positive and vanishes otherwise. %Replacing the hinge loss by a logarithmic loss yields a continuous $\operatorname{sigmoid}(\lambda_{W}^t)$ instead of $\textbf{1}(\lambda_{W}^t)$.  
 %We emphasis that 
 %$\frac{\partial {l_t (\W)}}{\partial \W}$ is a matrix, which %represents the gradient of $l_{\W}^{t}$ with respect to each %the elements of $W$.
 The matrix gradient of $\tfrac{1}{2} \| \W \|_{F}^{2}$ equals $\W$ and the matrix gradient of  $\log \det(\W)$ equals $\W^{-1}$, yielding 
@@ -537,7 +538,7 @@ The matrix gradient of $\tfrac{1}{2} \| \W \|_{F}^{2}$ equals $\W$ and the matri
 \sum\limits_{t\in T}{\{ [\tfrac{1}{2}[\vec{q}_{t}\Delta\vec{p}_{t}\T + \Delta\vec{p}_{t}\vec{q}_{t}\T \} } \cdot \textbf{1}(\lambda_{W}^t)] \\- \alpha \cdot \W^{-1} + \beta \cdot \W 
 \label{gradMat}
 \end{multline}
-
+}
 
 \section*{Appendix B: Updating the inverse matrices}
 \label{appendix-inverse}
@@ -555,7 +556,7 @@ and write
       \vec{e_k}\T \\ \vec{u}\T \end{matrix} \right],
   \label{gradMtxWDB}
 \end{equation}
-where $\vec{u}$ is a column vector that equals the column $k$ of the gradient matrix of the objective \eqref{gradMat},
+where $\vec{u}$ is a column vector that equals the column $k$ of the gradient matrix of the objective \eqref{gradMtx},
 $\vec{e_k}$ equals an elementary vector for selecting a column $k$ of
 a matrix. 
 Using the Woodbury matrix identity gives 
@@ -602,18 +603,16 @@ For any $\W$ and $\Hh^i$ such that $\W + \Hh^i$ is PSD, there exists a positive 
 &\tL + \sum_{k,l=1}^d  \grdkl \Hh_{kl}^i + \frac{M_i}{2} \sum_{k,l=1}^d  (\Hh_{kl}^i)^2, \nonumber
 \end{align}
 with the constant $M_i \leq  2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2) + \frac{\alpha d}{\kappa ^2} + \beta$.
-
 \end{applemma}}
 
 \begin{proof}[\bf{Proof of Lemma 1}]
-
 The objective $\tL$ is comprised of three terms: (1) the sum of loss terms, (2) the $\log \det$ term, and (3) the Frobenius regularization term. We will bound each of the separately, denoting the positive bounding constants $M^1_i$, $M^2_i$ and $M^3_i$, respectively.  
 %The Frobenius norm term ensures that $\tL$ is at least $\beta$ strongly-convex.
 
 Assuming the instances $\qt$ and $\pt$ are unit normalized, straightforward computation shows that for the term (1), inequality \ref{eq:ineq} holds true for $M^1_i \leq 2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2)$. %This means that if the features are more or less equally weighted, $M^1_i$ is very roughly on the order of $\frac{T}{d}$.
 
 To show that \ref{eq:ineq} is true for the $- \log \det$ term, we bound the maximal eigenvalue of its Hessian $\mathcal{H}$, which upper bounds $M_i^2$ by convexity and standard use of a Taylor expansion.
-The Hessian is a $d^2 \times d^2$ PSD matrix, due to convexity and twice-differentiability of $- \log \det$. At every point $\mat{X} = \W + \kappa I$, $\W \succ 0$, the Hessian $\mathcal{H}(\mat{X})$ defines a bilinear form $\mathcal{B}_{\mat{X}}\left(\mat{P},\mat{Q}\right)$ on the set of symmetric $d \times d$ matrices. This bilinear form is \citep[Appendix A.4.3]{boyd2004convex} $\mathcal{B}_{\mat{X}}\left(\mat{P},\mat{Q}\right) = tr\left(\mat{X}^{-1}\mat{P} \mat{X}^{-1}\mat{Q}\right).$ We then have:
+The Hessian is a $d^2 \times d^2$ PSD matrix, due to convexity and twice-differentiability of $- \log \det$. At every point $\mat{X} = \W + \kappa I$, $\W \succ 0$, the Hessian $\mathcal{H}(\mat{X})$ defines a bilinear form $\mathcal{B}_{\mat{X}}\left(\mat{P},\mat{Q}\right)$ on the set of symmetric $d \times d$ matrices. This bilinear form is  $\mathcal{B}_{\mat{X}}\left(\mat{P},\mat{Q}\right) = tr\left(\mat{X}^{-1}\mat{P} \mat{X}^{-1}\mat{Q}\right)$ \citep[Appendix A]{boyd2004convex}. We then have:
 \begin{align*}
 &\max eig(\mathcal{H}) = \max_{\|\mat{P}\|_F=1} \mathcal{B}_{\mat{X}}\left(\mat{P},\mat{P}\right) = \\
 &\max_{\|\mat{P}\|_F=1} tr\left(\mat{X}^{-1}\mat{P} \mat{X}^{-1}\mat{P}\right) \leq \\
@@ -626,7 +625,6 @@ We therefore have a bound $M^2_i \leq \frac{\alpha d}{\kappa^2}$.
 Finally, the constant $M^3_{i}$ for the Frobenius regularization is immediately seen to be $\beta$.
 
 Collecting all the terms together, we obtain an overall bound on the constant: $M_i \leq M^1_{i} + M^2_{i} + M^3_{i} \leq  M^1_{i} + \frac{\alpha d}{\kappa ^2} + \beta$.
-
 \end{proof}
 
 \ignore{
@@ -637,14 +635,14 @@ For any symmetric $\Hh \in \R^{d \times d}$ such that $\W + \Hh$ is PSD, let $\H
 &\tL + \sum_{k,l=1}^d  \grdkl \Hh_{kl} \Pp_{kl} + \frac{1}{2} \sum_{k,l=1}^d   M_k (\Hh_{kl})^2 \Pp_{kl}
 \end{align*}
 \end{applemma}}
-
+%
 \begin{proof}[\bf{Proof of Lemma 2}]
 \begin{align*}
 &\mathbb{E}_{i \sim uniform 1 \ldots d} \left[ \tilde{L}(\W + \Hh^i) \right] = \frac{1}{d} \sum_{i=1}^d \tilde{L}(\W + \Hh^i) \stackrel{(a)}{\leq} \\
 & \frac{1}{d} \sum_{i=1}^d \left(\tL + \sum_{k,l=1}^d \grdkl \Hh_{kl}^i + \frac{M_i}{2} \sum_{k,l=1}^d  (\Hh_{kl}^i)^2 \right) \stackrel{(b)}{=} \\
 & \tL + \sum_{k,l=1}^d \grdkl \Hh_{kl} \Pp_{kl} + \frac{1}{2} \sum_{k,l=1}^d M_k (\Hh_{kl})^2 \Pp_{kl}.
 \end{align*}
-Inequality (a) is due to Lemma \ref{lem:smooth}. Equality (b) is by a simple counting argument, using the fact the $\Hh^i$ is the restriction of $\Hh$ to the its $i$-th row and column. Note that each off-diagonal element $\Hh_{kl}$ appears twice in the sum over $i$: once when $i=k$ and once when $i=l$. This is accounted for by the elements $\Pp_{kl}$.
+Inequality (a) is due to Lemma \ref{lem:smooth}. Equality (b) is by a simple counting argument, and the fact that $\Hh^i$ is the restriction of $\Hh$ to its $i$-th row and column. Each off-diagonal element $\Hh_{kl}$ appears twice in the sum over $i$: when $i=k$ and $i=l$. This is accounted for by the elements $\Pp_{kl}$.
 \end{proof}
 
 \ignore{
