@@ -1,7 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%% COMET ICML 2015 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % Use the following line _only_ if you're still using LaTeX 2.09.
 %\documentstyle[icml2015,epsf,natbib]{article}
 % If you rely on Latex2e packages, like most moden people use this:
@@ -13,8 +12,6 @@
 \usepackage{mathtools}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
-
-
 % use Times
 \usepackage{times}
 \usepackage{graphicx} % more modern
@@ -27,15 +24,6 @@
 \newcommand{\theHalgorithm}{\arabic{algorithm}}
 \usepackage{icml2015} 
 
-% Employ this version of the ``usepackage'' statement after the paper has
-% been accepted, when creating the final version.  This will set the
-% note in the first column to ``Proceedings of the...''
-%\usepackage[accepted]{icml2015}
-
-
-% The \icmltitle you define below is probably too long as a header.
-% Therefore, a short form for the running title is supplied here:
-%\icmltitlerunning{Metric learning using Block Coordinate Descent}
 \begin{document} 
 
 \twocolumn[
@@ -402,7 +390,7 @@ Note that our algorithm can easily minimize $\tilde{L}$, the only difference bei
 
 We show that the modified objective $\tilde{L}$ obeys Assumptions $1$ and $2$ of \citet{richtarik2013optimal}. Thereby, according to Theorem 3 of \citeauthor{richtarik2013optimal}, Algorithm \ref{alg:comet} converges to the optimum value in a linear rate.
 
-See Appendix C for the proofs relating to the statements in this section.
+See Appendix  for the proofs relating to the statements in this section.
 \begin{lemma}[Smooth objective]
 \label{lem:smooth}
 Let $\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \kappa I) + \tfrac{\beta}{2}  \cdot \| \W + \kappa I \|_{F}^{2}$, where $l_{\W + \kappa I}$ is either the squared hinge loss or the log-loss, and $\tL$ is defined over the positive semidefininte cone. 
@@ -452,15 +440,6 @@ We evaluate COMET on two datasets and compare its performance with four metric-l
 \end{figure} 
 
 
-\begin{figure}[h]
-\vskip 0.2in
-\begin{center}
-\centerline{\includegraphics[width=\columnwidth]{Precision_at_K_all_datasets}}
-\caption{ (best seen in color) Comparison of the performance of COMET, LEGO, BoostMetric, HDSL and the Euclidean metrics across the datasets . Each curve shows the \textit{precision-at-top-k}, evaluated on the test set, as a function of $k$ neighbours. The results are averaged across 5 train/test random partitions (80\%/20\%), error bars are standard error of the means.}
-\label{precFig}
-\end{center}
-\vskip -0.2in
-\end{figure} 
 
 \subsection{Competing approaches}
 
@@ -503,6 +482,16 @@ Figure \ref{cometConvergeFig} traces the \textit{precision-at-top-k} over the te
 Figure \ref{precFig} compares the precision obtained with COMET, with four competing approaches, as described above. COMET achieved consistently superior or equal results throughout the full range of k (number of neighbours) tested. 
 
 Surprisingly, when studying the optimal values of hyper parameters, we found that the Frobenius regularizer obtained very small weights. Setting its coefficient to zero did not harm the performance.
+
+\begin{figure}[!h]
+\vskip 0.2in
+\begin{center}
+\centerline{\includegraphics[width=\columnwidth]{Precision_at_K_all_datasets}}
+\caption{ (best seen in color) Comparison of the performance of COMET, LEGO, BoostMetric, HDSL and the Euclidean metrics across the datasets . Each curve shows the \textit{precision-at-top-k}, evaluated on the test set, as a function of $k$ neighbours. The results are averaged across 5 train/test random partitions (80\%/20\%), error bars are standard error of the means.}
+\label{precFig}
+\end{center}
+\vskip -0.2in
+\end{figure} 
 
 
 
@@ -598,6 +587,7 @@ and the computational complexity of computing \eqref{InvA} is $O(d^2)$.
 \section*{Appendix C: Proofs}
 \label{appendix-proofs}
 
+\ignore{
 \begin{applemma}[Smooth objective]
 \label{applem:smooth}
 Let $\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \kappa I) + \tfrac{\beta}{2}  \cdot \| \W + \kappa I \|_{F}^{2}$, where $l_{\W + \kappa I}$ is either the squared hinge loss or the log-loss, and $\tL$ is defined over the positive semidefininte cone. 
@@ -611,9 +601,9 @@ For any $\W$ and $\Hh^i$ such that $\W + \Hh^i$ is PSD, there exists a positive 
 \end{align}
 with the constant $M_i \leq  2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2) + \frac{\alpha d}{\kappa ^2} + \beta$.
 
-\end{applemma}
+\end{applemma}}
 
-\begin{proof}
+\begin{proof}[\bf{Proof of Lemma 1}]
 
 The objective $\tL$ is comprised of three terms - (1) the sum of loss terms, (2) the $\log \det$ term, and (3) the Frobenius regularization term. We will bound each of the separately, denoting the positive bounding constants $M^1_i$, $M^2_i$ and $M^3_i$, respectively.  
 %The Frobenius norm term ensures that $\tL$ is at least $\beta$ strongly-convex.
@@ -638,15 +628,16 @@ Collecting all the terms together, we obtain an overall bound on the constant: $
 
 \end{proof}
 
+\ignore{
 \begin{applemma}[Expected Separable Overapproximation]\label{applem:ESO}
 For any symmetric $\Hh \in \R^{d \times d}$ such that $\W + \Hh$ is PSD, let $\Hh^i \in \R^{d \times d}$, $i=1 \ldots d$ be identical to $\Hh$  on the $i$-th row and column, and $0$ elsewhere. Then:
 \begin{align*}
 &\mathbb{E}_{i \sim uniform 1 \ldots d} \left[ \tilde{L}(\W + \Hh^i) \right] \leq \\
 &\tL + \sum_{k,l=1}^d  \grdkl \Hh_{kl} \Pp_{kl} + \frac{1}{2} \sum_{k,l=1}^d   M_k (\Hh_{kl})^2 \Pp_{kl}
 \end{align*}
-\end{applemma}
+\end{applemma}}
 
-\begin{proof}
+\begin{proof}[\bf{Proof of Lemma 2}]
 \begin{align*}
 &\mathbb{E}_{i \sim uniform 1 \ldots d} \left[ \tilde{L}(\W + \Hh^i) \right] = \frac{1}{d} \sum_{i=1}^d \tilde{L}(\W + \Hh^i) \stackrel{(a)}{\leq} \\
 & \frac{1}{d} \sum_{i=1}^d \left(\tL + \sum_{k,l=1}^d \grdkl \Hh_{kl}^i + \frac{M_i}{2} \sum_{k,l=1}^d  (\Hh_{kl}^i)^2 \right) \stackrel{(b)}{=} \\
