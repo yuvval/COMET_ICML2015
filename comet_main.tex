@@ -25,22 +25,14 @@
 \usepackage{icml2015} 
 
 \begin{document} 
-
 \twocolumn[
 \icmltitle{Metric Learning using Block Coordinate Descent}
-
-% It is OKAY to include author information, even for blind
-% submissions: the style file will automatically remove it for you
-% unless you've provided the [accepted] option to the icml2015
-% package.
-
 \icmlauthor{Yuval Atzmon}{yuval.atzmon@biu.ac.il}
 \icmladdress{The Gonda Brain Research Center, Bar Ilan University, 52900, Israel}
-\icmlauthor{Uri Shalit}{URI.SHALIT@MAIL.HUJI.AC.IL}
-\icmladdress{ICNC-ELSC & Computer Science Department, The Hebrew University of Jerusalem, 91904 Jerusalem Israel
-
+\icmlauthor{Uri Shalit}{uri.shalit@mail.huji.ac.il}
+\icmladdress{ICNC-ELSC & Computer Science Department, The Hebrew University of Jerusalem, 91904 Jerusalem Israel, 
 The Gonda Brain Research Center, Bar Ilan University, 52900 Ramat-Gan, Israel}
-\icmlauthor{Gal Chechik}{GAL.CHECHIK@BIU.AC.IL}
+\icmlauthor{Gal Chechik}{gal.chechik@biu.ac.il}
 \icmladdress{The Gonda Brain Research Center, Bar Ilan University, 52900, Israel}
 
 % You may provide any keywords that you 
@@ -111,9 +103,8 @@ The Gonda Brain Research Center, Bar Ilan University, 52900 Ramat-Gan, Israel}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract} 
-We describe COMET, a block coordinate-descent approach to learn distance metrics from data, using triplet-based ranking loss. The algorithm takes an interior point approach to guarantee that the search remains within the cone of positive definite matrices, and avoid costly projections to the cone. This is achieved by repeatedly optimizing a single row and column, corresponding to one input feature. 
-Our approach does not enforce the updates to be positive definite. Instead, it uses the Schur complement condition to guarantee that updates result with a positive definite metric matrix.
-We show that the computational complexity of COMET is competitive and derive convergence bounds showing linear convergence with high probability. Our experiments show that COMET outperforms competing methods. It is evaluated on two benchmarks in tasks of retrieving similar images and similar text documents. Additionally,  COMET is naturally set up for learning metrics in face of a growing and changing feature set, because the optimization is performed per-feature.
+When learning distance metrics from data, optimization is hard since limiting analysis to positive definite matrices involves a complex global constraint. We describe COMET, an interior-point, block-coordinate-descent procedure, which efficiently guarantees that the search remains within the cone of positive definite matrices, avoiding costly projections to the cone. 
+This is achieved by repeatedly optimizing a single row-and-column of the matrix metric, while using the Schur complement condition to guarantee that updates stay within the positive definite cone. As a block-coordinate-descent procedure, COMET We has fast convergence bounds showing linear convergence with high probability. When tested on benchmark datasets in a task of retrieving similar images and similar text documents, COMET significantly outperforms competing interior-point methods. Interestingly, COMET is naturally set up for learning metrics in face of a growing and changing feature set.
 \end{abstract} 
 
 \section{Introduction}
@@ -390,17 +381,18 @@ Note that our algorithm can easily minimize $\tilde{L}$, the only difference bei
 
 We show that the modified objective $\tilde{L}$ obeys Assumptions $1$ and $2$ of \citet{richtarik2013optimal}. Thereby, according to Theorem 3 of \citeauthor{richtarik2013optimal}, Algorithm \ref{alg:comet} converges to the optimum value in a linear rate.
 
-See Appendix  for the proofs relating to the statements in this section.
+See Appendix C for the proofs relating to the statements in this section.
 \begin{lemma}[Smooth objective]
 \label{lem:smooth}
-Let $\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \kappa I) + \tfrac{\beta}{2}  \cdot \| \W + \kappa I \|_{F}^{2}$, where $l_{\W + \kappa I}$ is either the squared hinge loss or the log-loss, and $\tL$ is defined over the positive semidefininte cone. 
+Let $\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \kappa I) + \tfrac{\beta}{2}  \cdot \| \W + \kappa I \|_{F}^{2}$, 
+where $l_{\W + \kappa I}$ is either the squared hinge loss or the log-loss, and $\tL$ is defined over the positive semidefininte cone. 
 Let $\Hh^i \in \R^{d \times d}$, $i=1 \ldots d$, be a symmetric matrix with non-zero entries only on the $i$-th row and column.
 
 For any $\W$ and $\Hh^i$ such that $\W + \Hh^i$ is PSD, there exists a positive constant $M_i$ such that:
 \begin{align}
 \label{eq:ineq}
-&\tilde{L}(\W + \Hh^i) \leq \tL + \langle \grd, \Hh^i \rangle + \frac{M_i}{2} \frobsq{\Hh^i} = \\
-&\tL + \sum_{k,l=1}^d  \grdkl \Hh_{kl}^i + \frac{M_i}{2} \sum_{k,l=1}^d  (\Hh_{kl}^i)^2, \nonumber
+&\tilde{L}(\W + \Hh^i) - \tL \leq  \langle \grd, \Hh^i \rangle + \frac{M_i}{2} \frobsq{\Hh^i} = \\
+& \sum_{k,l=1}^d  \grdkl \Hh_{kl}^i + \frac{M_i}{2} \sum_{k,l=1}^d  (\Hh_{kl}^i)^2, \nonumber
 \end{align}
 with the constant $M_i \leq  2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2) + \frac{\alpha d}{\kappa ^2} + \beta$.
 
@@ -426,18 +418,7 @@ If $t > \frac{d M^1 + \alpha (d/\kappa)^2 + d\beta}{\beta^*} log \left( \frac{\t
 
 
 \section{Experiments}
-We evaluate COMET on two datasets and compare its performance with four metric-learning approaches. All the approaches we compare with learn a Mahalanobis metric matrix and avoid repeated projections to the positive definite cone. 
-
-
-\begin{figure}[ht]
-\vskip 0.2in
-\begin{center}
-\centerline{\includegraphics[width=\columnwidth]{COMET_convergence}}
-\caption{ \textit{Precision-at-top-k} of COMET, evaluated on the test set, as a function of the number of coordinate steps, normalized to the data dimension. Error bars denote the standard error of the mean across 5 random train/test partitions (80\%/20\%) }
-\label{cometConvergeFig}
-\end{center}
-\vskip -0.2in
-\end{figure} 
+We evaluate COMET on two datasets and compare its performance with four metric-learning approaches. All the approaches we compare with learn a Mahalanobis metric matrix and avoid repeated projections to the PD cone. 
 
 
 
@@ -454,6 +435,7 @@ We evaluate COMET on two datasets and compare its performance with four metric-l
 \textbf{BoostMetric} \cite{boost}. Based on the observation that any positive semidefinite matrix can be decomposed into linear positive combination of rank-1 matrices, BoostMetric uses rank-1 PSD matrices as weak learners within a boosting based learning process.
 
 % -----------------------------
+
 \subsection{Datasets}
 We evaluate COMET on two benchmark datasets.
 
@@ -476,6 +458,18 @@ instances, this yields a measure known as \textit{precision-at-top-k},
 providing a precision curve as a function of the rank $k$.
 
 % -----------------------------
+
+
+\begin{figure}[!ht]
+\vskip 0.2in
+\begin{center}
+\centerline{\includegraphics[width=\columnwidth]{COMET_convergence}}
+\caption{ \textit{Precision-at-top-k} of COMET, evaluated on the test set, as a function of the number of coordinate steps, normalized to the data dimension. Error bars denote the standard error of the mean across 5 random train/test partitions (80\%/20\%) }
+\label{cometConvergeFig}
+\end{center}
+\vskip -0.2in
+\end{figure} 
+
 \subsection{Results}
  We evaluated the \textit{precision-at-top-k} on the test set, as a function of $k$ neighbours and averaged the results across 5 random train/test partitions (80\%/20\%).
 Figure \ref{cometConvergeFig} traces the \textit{precision-at-top-k} over the test sets as it progresses during learning. We observe that convergence is usually achieved after (6 to 8)$\times d$ coordinate steps.
@@ -605,7 +599,7 @@ with the constant $M_i \leq  2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2) +
 
 \begin{proof}[\bf{Proof of Lemma 1}]
 
-The objective $\tL$ is comprised of three terms - (1) the sum of loss terms, (2) the $\log \det$ term, and (3) the Frobenius regularization term. We will bound each of the separately, denoting the positive bounding constants $M^1_i$, $M^2_i$ and $M^3_i$, respectively.  
+The objective $\tL$ is comprised of three terms: (1) the sum of loss terms, (2) the $\log \det$ term, and (3) the Frobenius regularization term. We will bound each of the separately, denoting the positive bounding constants $M^1_i$, $M^2_i$ and $M^3_i$, respectively.  
 %The Frobenius norm term ensures that $\tL$ is at least $\beta$ strongly-convex.
 
 Assuming the instances $\qt$ and $\pt$ are unit normalized, straightforward computation shows that for the term (1), inequality \ref{eq:ineq} holds true for $M^1_i \leq 2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2)$. %This means that if the features are more or less equally weighted, $M^1_i$ is very roughly on the order of $\frac{T}{d}$.
@@ -646,19 +640,19 @@ For any symmetric $\Hh \in \R^{d \times d}$ such that $\W + \Hh$ is PSD, let $\H
 Inequality (a) is due to Lemma \ref{lem:smooth}. Equality (b) is by a simple counting argument, using the fact the $\Hh^i$ is the restriction of $\Hh$ to the its $i$-th row and column. Note that each off-diagonal element $\Hh_{kl}$ appears twice in the sum over $i$: once when $i=k$ and once when $i=l$. This is accounted for by the elements $\Pp_{kl}$.
 \end{proof}
 
-
+\ignore{
 \begin{apptheorem}
 Let $\W^t$ be the $t$-th iterate of Algorithm \ref{alg:comet} with objective function $\tL$, sampling each column-row $i$ with uniform probability and using step sizes $\eta_i \leq \frac{1}{M_i}$. Let $\tilde{L}^*$ be the optimal value of $\tL$ on the PSD cone. Let $\beta^* \geq \beta$ be the strong convexity parameter of $\tL$, $M^1 = \max_i M^1_i$, and $\rho >0, \epsilon>0$.
 
 If $t > \frac{d M^1 + \alpha (d/\kappa)^2 + d\beta}{\beta^*} log \left( \frac{\tilde{L}(W^0) - \tilde{L}^*}{\epsilon \rho}\right)$ then: $$Prob(\tilde{L}(\W^k) - \tilde{L}^* \leq \epsilon) \geq 1-\rho.$$
-\end{apptheorem}
-\begin{proof}
-We show that Algorithm \ref{alg:comet} with objective function $\tL$\footnote{With squared-hinge loss or log loss.}, sampling each column-row $i$ with uniform probability, and using step sizes $\eta_i \leq \frac{1}{M_i}$, follows Assumption 1 and Assumption 2 of \citet{richtarik2013optimal}. From this the convergence result follows from \citet[Theorem 3]{richtarik2013optimal} , plugging in our bounds regarding the smoothness and strong convexity of $\tL$.
+\end{apptheorem}}
+\begin{proof}[\bf{Proof of Theorem 1}]
+We show that Algorithm \ref{alg:comet} with objective function $\tL$\footnote{With squared-hinge loss or log loss.}, sampling each column-row $i$ with uniform probability, and using step sizes $\eta_i \leq \frac{1}{M_i}$, follows Assumption 1 and Assumption 2 of \citet{richtarik2013optimal}. From this the convergence result follows from \citeauthor[Theorem 3]{richtarik2013optimal}, plugging in our bounds regarding the smoothness and strong convexity of $\tL$.
 
 We first note that our algorithm is indeed a special case of the algorithm presented in \citet{richtarik2013optimal}. Specifically, our algorithm assigns probability $1/d$ to each of the $d$ column-rows of a matrix, and probability $0$ to every other possible choice of coordinates. We update along this block, and the $\log \det$ term acts as a barrier function
 assuring us we will stay within the PD cone.
 
-Lemma \ref{lem:ESO} shows that our objective is smooth and satisfies Assumption 1 of \citet{richtarik2013optimal}. Assumption 2 of \citet{richtarik2013optimal} is immediately satisfied because of the Frobenius regularization term, ensuring a strong convexity term  $\beta^* \geq \beta > 0$. The results follows by considering that the probability $\Pp_{ij}$ of updating coordinate $(i,j)$ obeys $\Pp_{ij} \geq 1/d$ and the values of $M_i$ given in Lemma \ref{lem:smooth}.
+Lemma \ref{lem:ESO} shows our objective is smooth and satisfies Assumption 1 of \citeauthor{richtarik2013optimal}. Assumption 2 of \citeauthor{richtarik2013optimal} is immediately satisfied because of the Frobenius regularization term, ensuring a strong convexity term  $\beta^* \geq \beta > 0$. The result follows by considering that the probability $\Pp_{ij}$ of updating coordinate $(i,j)$ obeys $\Pp_{ij} \geq 1/d$ and the values of $M_i$ given in Lemma \ref{lem:smooth}.
 
 \end{proof}
 
