@@ -421,7 +421,7 @@ should be flush left.
 % Note use of \abovespace and \belowspace to get reasonable spacing 
 % above and below tabular lines. 
 
-\begin{table}[t]
+\begin{table*}[t]
 \caption{Classification accuracies for naive Bayes and flexible 
 Bayes on various data sets.}
 \label{sample-table}
@@ -450,7 +450,36 @@ Vehicle   & 44.9$\pm$ 0.6& 61.5$\pm$ 0.4& $\surd$ \\
 \end{small}
 \end{center}
 \vskip -0.1in
-\end{table}
+\end{table*}
+
+
+\begin{table*}[t]
+\caption{Run time statistics [minutes]}
+\label{run-time-table}
+\vskip 0.15in
+\begin{center}
+\begin{small}
+\begin{sc}
+\begin{tabular}{lcccr}
+\hline
+\abovespace\belowspace
+Dataset     & COMET           & LEGO            & BoostMetric     & HDSL             \\ 
+\hline
+\abovespace
+Caltech256  &    72 $\pm$     2 &    15 $\pm$     3 &  1734 $\pm$    130&   495 $\pm$    73  \\ 
+Reuters CV1 &  1656 $\pm$    13 &   423 $\pm$    29 &        *        &   522 $\pm$    24  \\ 
+
+\belowspace
+\hline
+\end{tabular}
+\end{sc}
+\end{small}
+\end{center}
+\vskip -0.1in
+\end{table*}
+
+
+
 
 Tables contain textual material that can be typeset, as contrasted 
 with figures, which contain graphical material that must be drawn. 

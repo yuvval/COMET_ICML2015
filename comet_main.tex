@@ -103,20 +103,21 @@ The Gonda Brain Research Center, Bar Ilan University, 52900 Ramat-Gan, Israel}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract} 
-When learning distance metrics from data, optimization is hard since limiting analysis to positive definite matrices involves a complex global constraint. We describe COMET, an interior-point, block-coordinate-descent procedure, which efficiently guarantees that the search remains within the cone of positive definite matrices, avoiding costly projections to the cone. 
-This is achieved by repeatedly optimizing a single row-and-column of the matrix metric, while using the Schur complement condition to guarantee that updates stay within the positive definite cone. As a block-coordinate-descent procedure, COMET We has fast convergence bounds showing linear convergence with high probability. When tested on benchmark datasets in a task of retrieving similar images and similar text documents, COMET significantly outperforms competing interior-point methods. Interestingly, COMET is naturally set up for learning metrics in face of a growing and changing feature set.
+When learning distance metrics from data, optimization is hard since limiting analysis to positive definite matrices involves a complex global constraint. We describe COMET, a block-coordinate-descent procedure, which efficiently guarantees that the search remains within the cone of positive definite matrices, avoiding costly projections. 
+This is achieved by repeatedly optimizing a single row-and-column of the matrix metric, while using the Schur complement condition to guarantee that updates stay within the positive definite cone. As a block-coordinate-descent procedure, COMET has fast convergence bounds showing linear convergence with high probability. When tested on benchmark datasets in a task of retrieving similar images and similar text documents, COMET significantly outperforms competing projection-free methods. Interestingly, COMET is naturally set up for learning metrics in face of a growing and changing feature set.
 \end{abstract} 
 
 \section{Introduction}
 Learning a measure of pairwise distance among data samples is a fundamental task in machine learning. Learned metrics can be used to retrieve images that are similar to a query image, or recommend a news webpage given a page that a user visits. It can also be used as a representation for supervised learning techniques based on distances, such as nearest-neighbors or kernel methods \cite{kulis2012survey}. 
 
-Many metric learning (ML) approaches focus on learning linear transformations of the data, sometimes called Mahalanobis metrics. The metrics are learned such that the distances among samples in the projected space agree with some given measure of similarity (labels). This problem can also be viewed as learning a positive definite (PD) or positive semidefinite (PSD) matrix $\W$, because for given vectors $x$ and $y$, the squared Euclidean distances in the projected space $||Ax-Ay||^2_2$ is equivalent to the bi-linear form  $(x-y)^T\W(x-y)$ when  $\W=A^TA$. As a result, optimization over the PD cone has important application in machine learning. 
+Many metric learning (ML) approaches focus on learning linear transformations of the data, sometimes called Mahalanobis metrics. The metrics are learned such that the distances among the transformed sampled agree with some given measure of similarity (labels). This problem can also be viewed as learning a positive definite (PD) or positive semidefinite (PSD) matrix $\W$, because for given vectors $x$ and $y$, the squared Euclidean distances in the projected space $||Ax-Ay||^2_2$ is equivalent to the bilinear form  $(x-y)^T\W(x-y)$ when  $\W=A^TA$. As a result, optimization over the PD cone has important application in machine learning. 
+Learning PSD matrices can often be cast as a convex optimization problem, since the set of PSD matrices is convex. In practice however, metric learning is often challenging  when presented with high dimensional and massive data. For instance, a naive approach of repeatedly projecting onto the PD cone following gradient steps is prohibitively expensive in run time, as each projection requires an eigendecomposition which is cubic in the number of features. As a result, finding efficient optimization algorithms for metric learning is an ongoing important problem.
 
-Usually, learning positive definite matrices is cast as a convex optimization problem, using the fact that the set of PSD matrices is convex. However, in practice it is still often very challenging to learn the matrices efficiently when presented with high dimensional and massive data. For instance, a naive approach of repeatedly projecting onto the PD cone following gradient steps is prohibitively expensive in run time, as each projection requires an eigendecomposition which is cubic in the number of features. As a result, finding efficient optimization algorithms for metric learning is an ongoing important problem.
+\ignore{
+Furthermore an important challenge for metric learning is the case where the set of features is not fixed in advance, but changes with time. This is a typical scenario in many real life applications of learning: as more data accumulates, it is possible to estimate more parameters accurately, so more features and signals are gradually added to existing systems. It is therefore desirable to develop algorithms that can learn metrics in face of a growing feature set. 
+}
 
-An important challenge for metric learning is the case where the set of features is not fixed in advance, but changes with time. This is a typical scenario in many real life applications of learning: as more data accumulates, it is possible to estimate more parameters accurately, so more features and signals are gradually added to existing systems. A common example is that given more text documents, the vocabulary grows. It is therefore desirable to develop algorithms for learning metrics in face of a growing feature set. 
-
-Here we describe COMET, a {\em{CO-ordinate-descent METric learning}} algorithm. It is a computationally efficient block-coordinate optimization method that updates the matrix one row and column at a time, while at the same time efficiently limiting search to the interior of the PD cone without use of eigendecompositions. COMET converges in a geometric rate to the globally optimal value, and is naturally set up for learning metrics in face of a growing feature set. Evaluations on two benchmark datasets show that it performs better than other scalable metric learning methods which avoid costly projections. 
+Here we describe COMET, a {\em{COordinate-descent METric learning}} algorithm. It is a computationally efficient block-coordinate optimization method that updates the matrix one row and column at a time, while efficiently limiting optimization to the interior of the PD cone without use of eigendecompositions. COMET converges in a linear (i.e. geometric) rate to the globally optimal value, and is naturally set up for learning metrics in face of a growing feature set. Evaluations on two benchmark datasets show that it performs better than other scalable metric learning methods which avoid costly projections. 
 
 %Optimizing over the PD cone is challenging in the block-coordinate framework, since the PD constraint ties together all of the matrix coordinates. We show how to efficiently overcome this challenge by using the Schur complement to obtain faster and more stable step sizes.
 
@@ -124,11 +125,11 @@ Here we describe COMET, a {\em{CO-ordinate-descent METric learning}} algorithm. 
 \section{Related work}
 There has been intensive work on learning distance metrics and similarity measures from data, see \citet{bellet2013survey, kulis2012survey} for recent surveys. We consider here methods for learning linear Mahalanobis distance matrices as described above. A major challenge in this domain has been to efficiently enforce the similarity matrix to be positive. Learning a PSD matrix efficiently is hard because it requires maintaining all of the matrix eigenvalues non-negative during optimization, a global constraint that does not factorize easily.
 
-The simplest approach to enforcing positivity during optimization is to project the learned matrix onto the cone of PSD matrices. This projection amounts to solving an eigen deconvolution problem and is therefore costly (generally cubic in the feature dimensionality). In some cases, the number of projections can be cleverly cut down but each projection is still slow \cite{qianHD, qian}, and in some problems projections can be computed more efficiently \cite{shalev2004online}. A second common approach has been to learn the parameters of factored model $A^TA$. In this case, the learning problem is no longer convex. 
+The simplest approach to enforcing positivity during optimization is to project the learned matrix onto the cone of PSD matrices. This projection amounts to solving an eigendecomposition problem and is therefore costly (generally cubic in the feature dimensionality). In some cases, the number of projections can be cleverly cut down but each projection is still slow \cite{qianHD, qian}, and in some problems projections can be computed more efficiently \cite{shalev2004online}. A second common approach has been to learn the parameters of factored model $A^TA$. In this case, the learning problem is no longer convex. 
 
-Another line of works takes an interior-point approach, avoiding projections by limiting optimization within the PSD cone. \citet{davis2007information} and \citet{lego} introduced a logbarrier regularizer term to implement this approach. Another type of interior points method views a PSD matrix as a combination of other simpler PSD matrices. Very recently, \citet{hdsl} introduced HDSL, showing how to learn a PSD matrix as a weighted combination of rank-1 sparse PSD update matrices, which are all zeros except for $2\times2$ entries correpsonding to pairs of feature. \citet{boost} introduced BoostMetricwhich learns the metric matrix using rank-1 (PSD) updates which are generated by solving a dual optimization problem in a boosting-based process. See also \cite{bi2011adaboost}.
+Another line of works takes an interior-point approach, avoiding projections by limiting optimization within the PSD cone. \citet{davis2007information} and \citet{lego} introduced a log-barrier regularizer term to implement this approach. Another type of interior points method views a PSD matrix as a combination of other simpler PSD matrices. Very recently, \citet{hdsl} introduced HDSL, showing how to learn a PSD matrix as a weighted combination of rank-1 sparse PSD update matrices, which are all zeros except for $2\times2$ entries corresponding to pairs of feature. \citet{boost} introduced BoostMetric which learns the metric matrix using rank-1 (PSD) updates which are generated by solving a dual optimization problem in a boosting-based process. See also \cite{bi2011adaboost}.
 
-We take here an approach based on minimizing a strongly convex function using block-coordinate descent. There is a well established body of work analyzing the convergence of block-coordinate descent, eg \cite{nesterov2012efficiency,richtarik2014iteration}. We discuss this further in section 5 below.
+We take here an approach based on minimizing a strongly convex function using block-coordinate descent. There is a well established body of work analyzing the convergence of block-coordinate descent, eg. \cite{nesterov2012efficiency,richtarik2014iteration}. We discuss this further in section 5 below.
 
 
 % ===============================================
@@ -146,24 +147,24 @@ form parametrized by a model $\W \in \mathbb{R}^{d \times d}$.
 \end{equation}
 When the matrix $\W$ is PSD, it can be factored as $\W = A^TA$ and used to define a distance measure over pairs of data points. This is achieved by using the root matrix $A$ to transform the data: Given two data points $x$, $y$, their distance through the matrix $\W$, $(x-y)^T\W(x-y)$, is equivalent to a Euclidean distance in the transformed space  $\sqrt{(Ax-Ay)^T(Ax-Ay)} = ||Ax-Ay||_2$. 
 
-We assume that a weak form of supervision is given in the form of
-ranking relation over triplets. This form of supervision is often easy
+We assume that a weak form of supervision is given in the form of a
+ranking over triplets. This form of supervision is often easy
 to obtain and has been shown to achieve good performance
-\cite{weinberger2006dml,OASIS,qian}. Specifically, we assume we have access to
+\cite{weinberger2006dml,OASIS,qian}. We assume we have access to
 triplets of entities from $\cal{P}$, where each triplet $t$ consists of
 a ``query'' instance $\qt \in \cal{P}$, and two instance $\pt^{+}, \pt^{-} \in \cal{P}$ such that $\qt$ is more similar to $\pt^{+}$
 than to $\pt^{-}$.
 
 We aim to find a similarity measure $S_{\W}$ that agrees with the ranking of these triplets, namely, $S_{\W}(\q, \p^{+}) > S_{\W}(\q,
-\p^{-})$. To achieve this, we may use one of the folowing triplet loss functions
+\p^{-})$. To achieve this, we may use one of the following triplet loss functions
 \begin{align}
-\label{single-triplet-hinge-loss}
+\label{single-triplet-lossed}
 l_{\W}^h(\qt, &\pt^{+}, \pt^{-}) = [1-\qt\T\W\pt^+ + \qt\T\W\pt^-]_{+}
  \\ \nonumber
- \label{single-triplet-hinge-loss2}
+ %\label{single-triplet-hinge-loss2}
 l_{\W}^{hs}(\qt, &\pt^+, \pt^-) = [1-\qt\T\W\pt^+ + \qt\T\W\pt^-]_{+}^2
  \\ \nonumber
- \label{single-triplet-log-loss} 
+ %\label{single-triplet-log-loss} 
 l_{\W}^{log}(\qt, &\pt^+, \pt^-) = \\ 
 &log\left(1+exp(-\qt\T\W\pt^+ + \qt\T\W\pt^-)\right) \nonumber ,
 \end{align}
@@ -176,7 +177,7 @@ where $[z]_{+} \eqdef max(0,z)$.  Given a batch of $T$ triplets, and adding a Fr
 \end{eqnarray}
 where $l_{\W}$ is any of the triplet loss functions, $\frob{\W}$ is the Frobenius norm of the matrix $\W$, $\beta$ is the regularization weight and $\W \succ 0$ refers to $\W$ being positive definite. This optimization problem is convex in $\W$ since the objective is a sum of convex functions in $\W$, and the domain $\W \succ 0$ is convex as well.
 
-In several previous metric learning approaches \cite{qianHD, qian}, the constrained optimization problem is solved in an online way by making stochastic mini-batches gradient steps, while repeatedly projecting back to the convex cone of positive definite matrices. This projection amounts to solving an eigendecomposition problem and is therefore costly in run-time.
+Several previous metric learning approaches \cite{qianHD, qian}, solved the constrained optimization problem by making stochastic mini-batches gradient steps, while repeatedly projecting back to the convex cone of PD matrices. This projection amounts to solving an eigendecomposition problem and is therefore costly in run-time.
 
 An alternative approach is to use a log-barrier term to avoid projecting onto the PD cone \cite{davis2007information,lego}. The log-barrier term for the PD cone is $- \log \det (\W)$. This gives us the following optimization problem:
 \begin{multline}
@@ -252,7 +253,7 @@ matrices, as
 \begin{equation}
   \W = \left[ \begin{matrix} \C & \B\T \\ \B & A \end{matrix} \right],
   \quad
-  \newW = \left[ \begin{matrix} \C^* & \B^*\T \\ \B^* & A^* \end{matrix} \right]
+  \newW = \left[ \begin{matrix} \C^* & \B^*\T \\ \B^* & A^* \end{matrix} \right],
   \label{schurNotationPreUpdate}
 \end{equation}
  where $\C = \Wscalar \in \R$ (a scalar), $\B = \Wvec \in
@@ -271,7 +272,7 @@ Since $W \succ 0$ and $A$ is a minor of $\W$ which is left unchanged by the upda
 A \succ 0$.  Moreover, $\C^* - \B^*\T A^{*-1} \B^*$ is a
 scalar, yielding
 \begin{equation}
-  \newW \succ  0 \Leftrightarrow  \C^* - \B^*\T \invA \B^* >  0
+  \newW \succ  0 \Leftrightarrow  \C^* - \B^*\T \invA \B^* >  0.
   \label{schurCond}
 \end{equation}
 %
@@ -283,7 +284,7 @@ obtained from $\eta G = \newW - \W$. We expand \eqref{schurCond} and
 \begin{equation}
   \begin{array}{ll} 
     (\Wscalar + 2\eta \uscalar) \\
-    -(\Wvec + \eta \uvec)\T \invA (\Wvec + \eta \uvec)  & > 0
+    -(\Wvec + \eta \uvec)\T \invA (\Wvec + \eta \uvec)  & > 0.
   \end{array}
   \label{PDUpdateCondNonSimpl}
 \end{equation}
@@ -319,12 +320,11 @@ Grouping \eqref{PDUpdateCondNonSimpl} as a quadratic inequality in $\eta$, and u
 For $\eta = 0$ this inequality always
 holds since $\W \succ 0$ guarantees that $\C-\B^{\T} \invA \B >0$. As a result,
  \eqref{PDUpdateCondQuadForm} always has a real
-root $\eta > 0$. This root provides an upper bound on $\eta$ that guarantees that $\newW$ is PD.  The computational complexity of solving \eqref{PDUpdateCondQuadForm}, assuming $\invA$ is given, is $O(d^2)$ because computing the coefficients involves computing bilinear terms.
-Furthermore, $(\newW)^{-1}$ and $\invA$ can be computed efficiently in $O(d^2)$ given $\W^{-1}$ and $\invA$, using the Woodbury inverse matrix identity (see Appendix B).
+root $\eta > 0$. This root provides an upper bound on $\eta$ that guarantees that $\newW$ is PD. The computational complexity of solving \eqref{PDUpdateCondQuadForm}, assuming $\invA$ is given, is $O(d^2)$ because computing the coefficients involves computing bilinear terms.
+Furthermore, $(\newW)^{-1}$ and $\invA$ can be computed efficiently in $O(d^2)$ given $\W^{-1}$ and $\invA$, using the Woodbury inverse matrix identity (Appendix B).
 
 To conclude, we derived an upper limit for the step size of a block coordinate (row-column) step (\eqref{gradMtx} and \eqref{updateEq}) that guarantees that the updated matrix is PD. The computational complexity for the evaluation
 of \eqref{PDUpdateCondQuadForm} is $O(d^2)$, while holding $O(d^2)$ matrix elements in the memory.
-
 \ignore{\todo{Discuss numerical stability ?}}
 Our approach is summarized in Algorithm \ref{alg:comet}. We've chosen $\W^0$ to be the identity matrix $I_d$.
 
@@ -346,30 +346,34 @@ Our approach is summarized in Algorithm \ref{alg:comet}. We've chosen $\W^0$ to 
 \end{algorithmic}
 \end{algorithm}
 
+Although the step size bound guarantees that every update resides inside the PD cone, in practice, getting close to the boundary often led to numerical instability in computing $\W^{-1}$ is ill-conditioned. Having the  $\log \det$ regularizer in the objective greatly improved the numerical stability.
+
+\ignore{
+\subsection{Numerical Stability}
+The step size upper bound keeps the search always inside th e PD cone. This is sufficient for the theoretical optimization process. However, from a practical point of view, since COMET evaluates $\W^{-1}$ on every step, it should not update $\W$ with a solution that is near the PD cone edge, otherwise it will  be difficult to evaluate $\W^{-1}$, and will undermine the numerical stability of our approach. 
+
+To guarantee the numerical stability we took two measures: (a) We introduced the $\log \det$ barrier regularization \eqref{eq-logdet-loss}. (b) We multiplied the step size bound by a coefficient $\theta, 0 < \theta < 1$ which was chosen empirically once. 
+}
+
 \subsection{Analysis of computational complexity}
-We evaluate the computational complexity of a single coordinate step \eqref{gradMtx}, including the computation of the gradient and updating of $\W$, $\W^{-1}$ and $\invA$
+We evaluate the computational complexity of a single coordinate step \eqref{gradMtx}, including the computation of the gradient and updating of $\W$, $\W^{-1}$ and $\invA$.
 
 Consider first the computation of the gradient. For the hinge-loss case $l^{h}_W$, each element $\delta_{i,j}$ of the gradient matrix \eqref{gradMtx} equals
 \begin{multline}
     \delta_{(i,j)} = \sum\limits_{t\in T}{ [\tfrac{1}{2}[(\vec{q}_{t})_i(\Delta\vec{p}_{t}\T)_j + (\Delta\vec{p}_{t}\T)_i(\vec{q}_{t})_j\T] } \cdot \textbf{1}(\lambda_{W}^t)  \\ 
- - \alpha \cdot \W^{-1}_{i,j} + \beta \cdot \W_{i,j}
+ - \alpha \cdot \W^{-1}_{i,j} + \beta \cdot \W_{i,j},
 \label{gradMatElem}
 \end{multline}
-where $\lambda_{W}^$ is the linear part of the  loss of a triplet  
-$1-\qt\T \W \pt^{+} + \qt\T\W\pt^{-}.$
+where $\lambda_{W}^t \eqdef 1+\qt\T \W \Delta\p_{t}$ is the linear part a triplet loss
 
 For dense data, evaluating the sum over triplets costs $O(|T|)$ operations, where $|T|$ is the number of triplets. However, when the  data is sparse with a sparsity coefficient $\gamma$,  $ 0< \gamma <1 $, then evaluating the sum in \eqref{gradMatElem} costs an average of $O(\gamma^2 |T|)$ operations, because we can accumulate only the elements that are both non-zeros in $(\vec{q}_{t})_i$ and in $(\Delta\vec{p}_{t}\T)_j  $ and likewise for $(\vec{q}_{t})_j$ and $(\Delta\vec{p}_{t}\T)_i$. Computing $\W^{-1}_{i,j}$ and $\W_{i,j}$ costs $O(1)$ since we keep updated versions of $\W$ and $\W^{-1}$. Computing all the gradient elements $\delta_{(k,:)}$ in a single row $k$ then costs $O(d\cdot \gamma^2 |T|)$. Maintaining and updating $\W^{-1}$ and $\invA$, and computing the optimal step size follows from Eqs \ref{InvA}, \ref{PDUpdateCondQuadForm} and \ref{InvWwdb}, each with a cost of $O(d^2)$. The total computational complexity per block-coordinate step is therefore $O(\gamma^2 d |T| + d^2)$.
 
-In order to efficiently evaluate the indicator functions $\{ \textbf{1}(\lambda_{W}^t) \}_{t \in T}$ of \eqref{gradMatElem}. We hold an array of the linear terms $\{\lambda_{W}^t\}_{t \in T}$. Updating a single element $\delta_{i,j}$ of the gradient matrix will force an update of of a sparse number of elements in this array. It also costs $O(\gamma^2 |T|)$ operations, because the elements that change are those that are both non-zeros in $(\vec{q}_{t})_i$ and in $(\Delta\vec{p}_{t}\T)_j$ and likewise for $(\vec{q}_{t})_j$ and $(\Delta\vec{p}_{t}\T)_i$.
+In order to efficiently evaluate the indicator functions $\{ \textbf{1}(\lambda_{W}^t) \}_{t \in T}$ on \eqref{gradMatElem}. We hold an array of the linear terms $\{\lambda_{W}^t\}_{t \in T}$. Updating a single element $\delta_{i,j}$ of the gradient matrix will force an update of of a sparse number of elements in this array. It also costs $O(\gamma^2 |T|)$ operations, because the elements that change are those that are both non-zeros in $(\vec{q}_{t})_i$ and in $(\Delta\vec{p}_{t}\T)_j$ and likewise for $(\vec{q}_{t})_j$ and $(\Delta\vec{p}_{t}\T)_i$.
 
 Considering the total number of updates 
 the overall complexity of COMET is $O(N \cdot (\gamma d)^2 |T| + N \cdot d^3)$ while taking $N \dot d$ coordinate steps, where N is the number of iterations over all the coordinates. We found empirically that COMET converges within $N= 5 - 10$.
 
 As a comparison, consider using SGD or mini-batches for the objective \eqref{hingelt} and projecting onto the PD cone every $m$ triplets ($m << |T|$), as proposed in \citet{OASIS,qian}. The computational complexity per data pass becomes $O((\gamma d)^2 |T| + \frac{|T|}{m} d^3)$ which is larger compared to COMET. In fact, it only reaches the complexity of COMET when projections are very rare $m \propto |T|$.
-
-\ignore{
-As another comparison, consider a simple method like OASIS \cite{OASIS} whose update steps cost $d^2$ and avoids maintaining a PSD matrix, and uses one-time projection to the PSD cone after learning has ended (costing $d^3$). Their runtime complexity is also $O(\gamma d)^2 |T| + d^3)$. 
-}
 
 
 {\bf Memory footprint}. Keeping the data triplets in memory takes $O(\gamma d |T|)$ elements and holding $\W$ and $\W^{-1}$ costs $O(d^2)$. The total memory usage is $O(\gamma d |T| + d^2)$. \ignore{The fact that COMET performs local updates of $\W$ calls for parallelizing it, as done with other coordinate-descent approaches.}%I'm not sure we can parallelize, since the inverse term ties everything together
@@ -377,10 +381,9 @@ As another comparison, consider a simple method like OASIS \cite{OASIS} whose up
 \section{Convergence rate}
 Our method is based on minimizing a strongly convex function using block-coordinate descent. There is a well established body of work showing that with non-overlapping blocks, block-coordinate descent iterates converge w.h.p. in a linear rate to the optimum value \cite{nesterov2012efficiency,richtarik2014iteration}.
 However, the blocks we use in our method are overlapping - for example the $(1,2)$ coordinate of the matrix is a part of both the 1\textsuperscript{st} and the 2\textsuperscript{nd} column-row. To address this case, we use a more general convergence result applicable to overlapping blocks, given by \citet{richtarik2013optimal}. \citeauthor{richtarik2013optimal} give a very general result, suitable for \emph{any} distribution over the set of coordinate subsets. 
-Specifically relevant in our case, \citeauthor{richtarik2013optimal} give sufficient conditions for linear convergence of overlapping block-coordinate descent for a strongly convex smooth objective. We use a relatively simple distribution over coordinate subsets: we have $d$ overlapping blocks corresponding to the column-rows of the matrix, and we sample them with uniform probability $\frac{1}{d}$.
+Specifically of interest to us, \citeauthor{richtarik2013optimal} give sufficient conditions for a linear convergence rate of overlapping block-coordinate descent with a strongly convex smooth objective. We use a relatively simple distribution over coordinate subsets: we have $d$ overlapping blocks corresponding to the column-rows of the matrix, which we sample with uniform probability $\frac{1}{d}$.
 
-
-The step sizes implied by the convergence theory are usually conservative underestimates, especially since many of the constants involved in obtaining the step-sizes cannot be evaluated exactly but can only be upper bounded. In practice, we found that much faster convergence is gained using larger steps while staying within the PD cone, using the procedure described in detail in section \ref{subsec:step}.
+The step sizes implied by the convergence theory presented in this section are usually conservative underestimates, especially since many of the constants involved in obtaining the step-sizes cannot be evaluated exactly but can only be upper-bounded. In practice, we found that much faster convergence is gained using larger steps while staying within the PD cone, using the Schur complement driven procedure described in detail in section \ref{subsec:step}.
 
 To show convergence, we must prove our objective satisfies two assumptions: Assumption 1, called ``Expected Separable Overapproximation'', is that in expectation over the choice of blocks the function is smooth w.r.t. an inner product given by the coordinate probabilities. Assumption 2 is that the objective is strongly convex. In addition, for technical reasons the objective must be differentiable. This means that technically our proof is only valid for the squared hinge-loss and log-loss, but not the non-differentiable hinge-loss.
 
@@ -392,10 +395,11 @@ We show that the modified objective $\tilde{L}$ obeys Assumptions $1$ and $2$ of
 See Appendix C for the proofs relating to the statements in this section.
 \begin{lemma}[Smooth objective]
 \label{lem:smooth}
-Let $\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} - \alpha \cdot \log \det(\W + \kappa I) + \tfrac{\beta}{2}  \cdot \| \W + \kappa I \|_{F}^{2}$, 
+Let 
+$\tL=\sum\limits_{t\in T}{l_{\W + \kappa I}(\vec{q}_t, \vec{p}_{t}^{+}, \vec{p}_{t}^{-})} -
+\alpha \cdot \log \det(\W + \kappa I) + \tfrac{\beta}{2}  \cdot \| \W + \kappa I \|_{F}^{2}$, 
 where $l_{\W + \kappa I}$ is either the squared hinge loss or the log-loss, and $\tL$ is defined over the positive semidefininte cone. 
 Let $\Hh^i \in \R^{d \times d}$, $i=1 \ldots d$, be a symmetric matrix with non-zero entries only on the $i$-th row and column.
-
 For any $\W$ and $\Hh^i$ such that $\W + \Hh^i$ is PSD, there exists a positive constant $M_i$ such that:
 \begin{align}
 \label{eq:ineq}
@@ -403,7 +407,6 @@ For any $\W$ and $\Hh^i$ such that $\W + \Hh^i$ is PSD, there exists a positive 
 & \sum_{k,l=1}^d  \grdkl \Hh_{kl}^i + \frac{M_i}{2} \sum_{k,l=1}^d  (\Hh_{kl}^i)^2, \nonumber
 \end{align}
 with the constant $M_i \leq  2 \sum_{t=1}^T (\qt_i^2 +{\Delta\vec{p}_{t}}_i^2) + \frac{\alpha d}{\kappa ^2} + \beta$.
-
 \end{lemma}
 
 Let us define a matrix $\Pp \in \R^{d \times d}$ such that $\Pp_{ij} = \frac{2}{d}$ for $i \ne j$, $\Pp_{ii} = \frac{1}{d}$. $\Pp$ is defined such that $\Pp_{ij}$ is the probability of updating the $(i,j)$ entry of the matrix $\W$ at any given iteration. To show our method converges in a linear rate, we must show that $\tL$, $\Pp$ and the constants $M_i$ satisfy the ``Expected Separable Overapproximation'' assumption presented by \citet{richtarik2013optimal}:
@@ -429,14 +432,13 @@ If $t > \frac{d M^1 + \alpha (d/\kappa)^2 + d\beta}{\beta^*} log \left( \frac{\t
 We evaluate COMET on two datasets and compare its performance with four metric-learning approaches. All the approaches we compare with learn a Mahalanobis metric matrix and avoid repeated projections to the PD cone. 
 
 
-
 \subsection{Competing approaches}
 
 \textbf{COMET}. The algorithm described in \ref{alg:comet}. We experimented with the linear hinge-loss for the triplets loss, see \eqref{eq-logdet-loss}.
 
 \textbf{Euclidean}. The Euclidean distance in the original feature space. COMET is initialized using the identity matrix, which is equivalent to this distance measure.
 
-\textbf{HDSL} \cite{hdsl}. An approach tuned for high-dimensional sparse data. HDSL learns a convex combination of rank-1 PSD matrices that are all zeros except for a $2\times2$ pair of features elements. It iteratively adds these matrices, one pair of features at a time, to control the number of active features.
+\textbf{HDSL} \cite{hdsl}. An approach tuned for high-dimensional sparse data. HDSL learns a convex combination of rank-1 PSD matrices that are all zeros except for a $2\times2$ pair of features elements. It iteratively adds these matrices, one feature-pair at a time, to control the number of active features.
 
 \textbf{LEGO} \cite{lego}. This approach uses a $\log \det$ barrier term to enforce matrix PD. The main variant of LEGO aims to fit a given pairwise distances. We used another variant of LEGO that, like COMET, learns from relative distances. Loss is incurred for same-class samples that are farther than a certain distance, and different-class samples closer than certain distance.
 
@@ -449,7 +451,7 @@ We evaluate COMET on two benchmark datasets.
 
 \textbf{Reuters CV1} is a widely used collection of English text documents. We used the 4-class subset of Reuters CV1 introduced in \cite{CaiRCV14} that was recently tested for metric learning in \cite{hdsl}. We used the \textit{infogain} criterion \cite{infogain} to select a subset of 5000 features that conveyed high information about the identity of the class. This is a discriminative criterion, which measures the number of bits gained for category prediction by knowing the presence or absence of a term in a document. Each document was represented as a bag of words, where the weights of the selected features were normalized using \textit{tf-idf}. The sparsity of this dataset, after selecting the 5000 infogain features, is 1.3\%
 
-We used 100,000 triplets (and 200,000 LEGO constraints) for training on Reuters CV1. This is the same scale that was used in \cite{hdsl}. For training HDSL, we took 8000 iterations as in \cite{hdsl}. Due to the large number of features, BoostMetric could not converge on this dataset.
+We used 100,000 triplets (and 200,000 LEGO constraints) for training on Reuters CV1. This is the same scale that was used in \cite{hdsl}. For training HDSL, we took 8000 iterations as in \cite{hdsl}. BoostMetric could not converge on this dataset due to memory and runtime issues caused by the large number of features.
 
 \textbf{Caltech256} is a dataset of labeled images used for visual object recognition. We used the subset of 50 classes tested for metric learning in \cite{OASIS}. This set contains 65 images per class (total of 3250 images), represented with ~1000 \textit{bag-of-local-descriptors} features provided by these authors. The sparsity of this dataset is 3.3\%
 
@@ -457,16 +459,6 @@ We used 135,000 triplets (and 300,000 LEGO constraints) for training, roughly as
 
 \subsection{Experimental setup}
 In both datasets, two samples are considered similar if they share the same class label. Each data set is tested on a two layer 5 fold cross validation experiment with 80\%/20\% random splits. We use the same (frozen) random splits across all approaches. We trained all learners with the exact same set of triplets, except for LEGO that uses pairs constraints. We verified that we choose the triplets/constraints number in a regime such that test performance converges (figures not shown due to space constraints). We generated triplets randomly while keeping a fixed number of triplets per query sample.
-
-% -----------------------------
-\subsection{Evaluation measures}
-We evaluated the performance of all algorithms using standard ranking precision measures based on nearest neighbors. For each query instance in the test set, all other test instances were ranked according to their similarity to the query instance. The number of same-class instances
-among the top k instances (the k nearest neighbors) was computed. When averaged across test
-instances, this yields a measure known as \textit{precision-at-top-k},
-providing a precision curve as a function of the rank $k$.
-
-% -----------------------------
-
 
 \begin{figure}[!ht]
 \vskip 0.2in
@@ -478,12 +470,23 @@ providing a precision curve as a function of the rank $k$.
 \vskip -0.2in
 \end{figure} 
 
+% -----------------------------
+\subsection{Evaluation measures}
+We evaluated the performance of all algorithms using standard ranking precision measures based on nearest neighbors. For each query instance in the test set, all other test instances were ranked according to their similarity to the query instance. The number of same-class instances
+among the top k instances (the k nearest neighbors) was computed. When averaged across test
+instances, this yields a measure known as \textit{precision-at-top-k},
+providing a precision curve as a function of the rank $k$.
+
+% -----------------------------
+
+
+
 \subsection{Results}
  We evaluated the \textit{precision-at-top-k} on the test set, as a function of $k$ neighbours and averaged the results across 5 random train/test partitions (80\%/20\%).
-Figure \ref{cometConvergeFig} traces the \textit{precision-at-top-k} over the test sets as it progresses during learning. We observe that convergence is usually achieved after (6 to 8)$\times d$ coordinate steps.
+Figure \ref{cometConvergeFig} traces the \textit{precision-at-top-k} over the test sets as it progresses during learning. We observe that convergence is usually achieved after $6\times d$ to $8 \times d$ coordinate steps.
 Figure \ref{precFig} compares the precision obtained with COMET, with four competing approaches, as described above. COMET achieved consistently superior or equal results throughout the full range of k (number of neighbours) tested. 
 
-Surprisingly, when studying the optimal values of hyper parameters, we found that the Frobenius regularizer obtained very small weights. Setting its coefficient to zero did not harm the performance.
+Surprisingly, when studying the optimal values of hyper parameters, we found that the Frobenius regularizer obtained very small weights. Setting its coefficient to zero did not harm the performance.We also compared COMET with OASIS , a method that learns a non-PSD similarity matrix, which has been shown to yield better precision on the Caltech data \cite{OASIS}. Interestingly, COMET achieves near identical precision to OASIS.
 
 \begin{figure}[!h]
 \vskip 0.2in
@@ -498,20 +501,18 @@ Surprisingly, when studying the optimal values of hyper parameters, we found tha
 
 
 
-\section{Summary}
-We presented an approach for learning a distance metric from data samples,  continuously restricting the solutions to the positive cone, but avoiding runtime-costly projections. The approach is based on block-coordinate-descent and iteratively updaes a single row-column in the matrix that correpsonds to a single feature. 
+\section{Summary and future directions}
+We presented an approach for learning a distance metric from data samples,  continuously restricting the solutions to the positive cone, but avoiding runtime-costly projections. The approach is based on block-coordinate-descent and iteratively updates a single row-column in the matrix that corresponds to a single feature. 
 
-
+An important challenge for learning is the case where the set of features is not fixed in advance, but changes with time. This is a typical scenario in many real life applications of learning: as more data accumulates, it is possible to estimate more parameters accurately, so more features and signals are gradually added to existing systems. It is therefore desirable to develop algorithms that can learn metrics in face of a growing feature set. COMET can be effortlessly adapted to this setup, by extending the existing learned matrices and sample more heavily rows and columns that correspond to new features. The specifics of this approach are the topic of further research.
 
 
 % ==============================================================
 \appendix
-\section*{Appendix A: Details of gradient derivation}
+\section*{Appendix A: Details of gradient derivation for a triplet}
 \label{appendix-grad}
 
-To compute matrix gradient step  $\frac{\partial {l_t (\W)}}{\partial \W}$ of an arbitrary triplet $t$, we denote the linear part of the hinge loss of a triplet $t$ by
-
-$\lambda_{W}^t \eqdef 
+To compute matrix gradient step  $\frac{\partial {l_t (\W)}}{\partial \W}$ of an arbitrary triplet $t$, we denote the linear part of the hinge loss of a triplet $t$ by $\lambda_{W}^t \eqdef 
 1-\qt\T \W \pt^{+} + \qt\T\W\pt^{-}.$
 
 $\W$ is PD and therefore symmetric. We enforce its gradient to be symmetric by replacing $\W$ with $\tfrac{1}{2}(\W + \W\T)$.
@@ -519,7 +520,7 @@ The derivative of the ranking loss is then given by
 \begin{equation}
 \frac{\partial {l_{\W}^{t}}}{\partial \W} = \tfrac{1}{2}[\vec{q}_{t}\Delta\vec{p}_{t}\T  + \Delta\vec{p}_{t}\vec{q}_{t}\T]\cdot {l'}(\lambda_{W}^t)
 \label{dlossranking}
-\end{equation} where $l'(x) \eqdef \frac{\partial {l(x)}}{\partial x}$, $\Delta\vec{p}_{t} \eqdef (\vec{p}_{t}^{-} - \vec{p}_{t}^{+})$.
+\end{equation} where $l'(x) \eqdef \frac{d{l(x)}}{dx}$ is the outer derivative of the loss function, $\Delta\vec{p}_{t} \eqdef (\vec{p}_{t}^{-} - \vec{p}_{t}^{+})$.
 
 
 \ignore{
@@ -543,7 +544,7 @@ The matrix gradient of $\tfrac{1}{2} \| \W \|_{F}^{2}$ equals $\W$ and the matri
 \section*{Appendix B: Updating the inverse matrices}
 \label{appendix-inverse}
 
-To compute efficienly  the updates of \eqref{PDUpdateCondQuadForm} we update $\W^{-1}$ following a block coordinate step, and derive $\invA$ from $\W^{-1}$ before the next step. Both terms take $O(d^2)$ to compute.
+To compute efficiently  the updates of \eqref{PDUpdateCondQuadForm} we update $\W^{-1}$ following a block coordinate step, and derive $\invA$ from $\W^{-1}$ before the next step. Both terms take $O(d^2)$ to compute.
 
 $\W^{*-1}$ can be easily computed using the Woodbury matrix
 identity \cite{woodbury1950inverting}. We rewrite  \eqref{updateEq} and \eqref{gradMtx} using $\newW = \W + \eta G = \W+\mat{\widetilde{G}}$
@@ -661,6 +662,7 @@ Lemma \ref{lem:ESO} shows our objective is smooth and satisfies Assumption 1 of 
 
 \end{proof}
 
+\newpage
 \bibliography{comet}
 \bibliographystyle{icml2015}
 
