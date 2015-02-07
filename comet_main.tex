@@ -349,7 +349,7 @@ Our approach is summarized in Algorithm \ref{alg:comet}. We've chosen $\W^0$ to 
 \ignore{
 Although the step size bound guarantees that every update resides inside the PD cone, in practice, getting close to the boundary often led to numerical instability in computing $\W^{-1}$ which became ill-conditioned. Having the $\log \det$ regularizer in the objective greatly improved the numerical stability.}
 
-Although our method guarantees that every update resides inside the PD cone, in practice, getting close to the boundary often led to numerical instability in computing \W^{−1} which became ill-conditioned. We alleviate this problem by multiplying the step size bound by a constant factor $0< \theta <1$, which was empirically chosen.
+Although our method guarantees that every update resides inside the PD cone, in practice, getting close to the boundary often led to numerical instability in computing $\W^{-1}$ which became ill-conditioned. We alleviate this problem by multiplying the step size bound by a constant factor $0< \theta <1$, which was empirically chosen.
 
 \ignore{
 \subsection{Numerical Stability}
@@ -502,7 +502,6 @@ Surprisingly, when studying the optimal values of hyper parameters, we found tha
 \end{center}
 \vskip -0.2in
 \end{figure} 
-
 
 
 
